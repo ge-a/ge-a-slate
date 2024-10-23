@@ -326,14 +326,14 @@ class MultiModalUserTrackingModule(LightningModule):
                                                                         activity_relevant_edges = activity_relevant_objects,
                                                                         activity_mask = latent_mask)
             
-            #_, cross_activity_sensor_pred_loss, cross_activity_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
+            _, cross_activity_sensor_pred_loss, cross_activity_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
 
             latent_in = graph_latents + time_context if self.cfg.addtnl_time_context else graph_latents
             _, cross_activity_pred_loss, cross_accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                     latents=latent_in, 
                                                                                     ground_truth=activity_id_seq)
             
-            #_, cross_graph_sensor_pred_loss, cross_graph_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
+            _, cross_graph_sensor_pred_loss, cross_graph_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
 
             latent_in = sensor_latents + time_context if self.cfg.addtnl_time_context else sensor_latents
             _, cross_sensor_graph_pred_loss, cross_sensor_graph_acc = self.object_activity_coembedding_module.decode_graph(
