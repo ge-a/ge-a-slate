@@ -5,7 +5,8 @@ import torch
 import torch.nn.functional as F
 from encoders import time_external
 from torch.utils.data import DataLoader
-from utils import objects_by_activity
+from my_utils import objects_by_activity
+import sys
 
 def not_a_tree(original_edges, sparse_edges, nodes):
     num_parents = sparse_edges.sum(axis=-1)
@@ -172,12 +173,20 @@ class DataSplit():
             self.activity_masks[idx] = (torch.rand_like(activity_id.float()) < self.activity_dropout).to(bool)
         activity_mask_datapoint = self.activity_masks[idx]
 
+        sensor_ids = data['states'][:-1, :, :]
+        sensors = torch.zeros(sensor_ids.shape + (3,))
+        sensors[..., 0] = (sensor_ids == -1).long()
+        sensors[..., 1] = (sensor_ids == 0).long()
+        sensors[..., 2] = (sensor_ids == 1).long()
+
         datapoint = {
             'edges': edges, 
             'node_features': node_features, 
             'node_ids': node_ids,
             'activity_features': activity_feature,
             'activity_ids': activity_id,
+            'sensor_ids' : sensor_ids,
+            'sensors' : sensors,
             'time_features': time_feature,
             'time': time,
             'dynamic_edges_mask': dynamic_edges_mask,
@@ -259,7 +268,6 @@ class RoutinesDataset():
         for datapoint in self.train: # + self.test + self.val:
             changes = (datapoint['edges'][1:].argmax(-1) != datapoint['edges'][:-1].argmax(-1)).to(int)
             obj_moved_around_now = (torch.nn.functional.conv1d(changes.unsqueeze(0).permute(2,0,1).float(), kernel, padding='same').permute(1,2,0).squeeze(0)>0).to(int)
-
             if obj_moved is None:
                 obj_moved = obj_moved_around_now
             else:

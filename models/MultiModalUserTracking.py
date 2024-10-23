@@ -1,6 +1,6 @@
 from argparse import ArgumentError
 import os
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+os.environ["cuda_LAUNCH_BLOCKING"] = "1"
 from copy import deepcopy
 import json
 import sys
@@ -13,9 +13,9 @@ from sklearn.manifold import TSNE
 import torch
 from torch.nn import functional as F
 from torch.optim import Adam
-from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.core import LightningModule
 from ObjectActivityCoembedding import ObjectActivityCoembeddingModule, Latent, LatentDeterministic, EXTRACAREFUL
-from utils import color_palette, get_metrics, wrap_str
+from helpers.my_utils import color_palette, get_metrics, wrap_str
 
 random.seed(23435)
 np.random.seed(23435)
@@ -30,7 +30,7 @@ class MultiModalUserTrackingModule(LightningModule):
         self.cfg = model_configs
         self.embedding_size = self.cfg.c_len
         self.individual_embedding_size = self.embedding_size
-
+        
         self.object_activity_coembedding_module = ObjectActivityCoembeddingModule(model_configs=model_configs)
 
         ### Prediction Model ###
@@ -49,6 +49,12 @@ class MultiModalUserTrackingModule(LightningModule):
 
         self.num_test_batches = 0
         
+        self.output_results = {
+            'changes_pred' : torch.tensor([]).to('cuda'),
+            'dest_pred' : torch.tensor([]).to('cuda'),
+            'dest_gt' : torch.tensor([]).to('cuda'),
+            'time' : torch.tensor([]).to('cuda')
+        }
         self.results_with_clarification = {}
         self.result_data = {
             'relocation_distributions':[torch.tensor([]).to('cuda') for _ in range(self.cfg.lookahead_steps)],
@@ -204,6 +210,7 @@ class MultiModalUserTrackingModule(LightningModule):
             activity_seq             : batch_size x sequence_length+1 x num_activities(+None)
             time_context             : batch_size x sequence_length+1 x context_length
         """
+        print(batch.keys())
         graph_seq_nodes = batch['node_features'].float()
         graph_seq_edges = batch['edges'].float()
         assert not EXTRACAREFUL or torch.allclose(graph_seq_edges.sum(-1), torch.ones_like(graph_seq_edges.sum(-1)), atol=0.1), "Edges are not normalized!"
@@ -211,6 +218,9 @@ class MultiModalUserTrackingModule(LightningModule):
         activity_seq = batch['activity_features'][:,:-1,:]
         activity_id_seq = batch['activity_ids'][:,:-1]
         latent_mask = batch['activity_mask_drop'][:,:-1]
+        
+        sensor_id = batch['sensor_ids']
+        sensor_seq = batch['sensors']
         
         time_context = batch.get('time_features', torch.zeros((batch['edges'].size()[0],batch['edges'].size()[1], batch['edges'].size()[2], self.cfg.c_len)))
         time_context = time_context[:,1:,:]
@@ -222,7 +232,6 @@ class MultiModalUserTrackingModule(LightningModule):
             print("THIS IS ONLY OKAY FOR DEBUGGING!!!!!! YOU ARE NOT TRAINING A MODEL THAT WILL WORK IN REALITY!!!!! THE TIME CONTEXT IS TOO SHORT!!!!!!")
             print()
         time_context = torch.cat([time_context, torch.zeros((time_context.size()[0], time_context.size()[1], self.cfg.c_len - time_context.size()[2])).to('cuda')], dim=-1)
-        
         activity_relevant_objects = batch.get('activity_relevant_objects', torch.zeros((graph_seq_nodes.size()[0], graph_seq_nodes.size()[1]-1, graph_seq_nodes.size()[2])))
         assert activity_relevant_objects.size()[0] == graph_seq_nodes.size()[0], f"Wrong auxiliary activity target size {activity_relevant_objects.size()[0]} v.s. {graph_seq_nodes.size()[0]}"
         assert activity_relevant_objects.size()[1] == graph_seq_nodes.size()[1]-1, f"Wrong auxiliary activity target size {activity_relevant_objects.size()[1]} v.s. {graph_seq_nodes.size()[1]-1}"
@@ -245,6 +254,24 @@ class MultiModalUserTrackingModule(LightningModule):
         assert self.cfg.n_nodes == num_t_nodes, (str(self.cfg.n_nodes) +'!='+ str(num_t_nodes))
 
         # Results Initialization for when not populated
+        cross_graph_sensor_pred_loss = torch.Tensor([0.]).to('cuda')
+        cross_activity_sensor_pred_loss = torch.Tensor([0.]).to('cuda')
+        cross_sensor_graph_pred_loss = torch.Tensor([0.]).to('cuda')
+        cross_sensor_activity_pred_loss = torch.Tensor([0.]).to('cuda')
+
+        cross_graph_sensor_acc = torch.Tensor([0.]).to('cuda')
+        cross_activity_sensor_acc = torch.Tensor([0.]).to('cuda')
+        cross_sensor_graph_acc = torch.Tensor([0.]).to('cuda')
+        cross_sensor_activity_acc = torch.Tensor([0.]).to('cuda')
+
+        combined_accuracy_sensor = torch.Tensor([0.]).to('cuda')
+        combined_sensor_pred_loss = torch.Tensor([0.]).to('cuda')
+
+        sensor_pred_loss = torch.Tensor([0.]).to('cuda')
+        accuracy_sensor = torch.Tensor([0.]).to('cuda')
+
+        sensor_pred_loss_overshoot = torch.Tensor([0.]).to('cuda')
+
         graph_autoenc_loss = torch.Tensor([0.]).to('cuda')
         activity_autoenc_loss = torch.Tensor([0.]).to('cuda')
         latent_similarity_loss = torch.Tensor([0.]).to('cuda')
@@ -285,6 +312,9 @@ class MultiModalUserTrackingModule(LightningModule):
 
             activity_latents, activity_autoenc_loss, accuracy_activity_autoenc = self.object_activity_coembedding_module.autoencode_activity(activity_seq, activity_gt=activity_id_seq, time_context=time_context)
 
+            # Encode sensors
+            sensor_latents, sensor_autoenc_loss, accuracy_sensor_autoenc = self.object_activity_coembedding_module.autoencode_sensor(sensor_seq, sensor_gt=sensor_id, time_context=time_context)
+
             # Latent training
             latent_in = activity_latents + time_context if self.cfg.addtnl_time_context else activity_latents
             _, cross_graph_pred_loss, cross_accuracy_object = self.object_activity_coembedding_module.decode_graph(
@@ -295,15 +325,33 @@ class MultiModalUserTrackingModule(LightningModule):
                                                                         output_edges=graph_seq_edges[:,1:,:,:],
                                                                         activity_relevant_edges = activity_relevant_objects,
                                                                         activity_mask = latent_mask)
+            
+            #_, cross_activity_sensor_pred_loss, cross_activity_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
 
             latent_in = graph_latents + time_context if self.cfg.addtnl_time_context else graph_latents
             _, cross_activity_pred_loss, cross_accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                     latents=latent_in, 
                                                                                     ground_truth=activity_id_seq)
-
-            latent_similarity_loss = self.object_activity_coembedding_module.latent_loss(graph_latents, activity_latents, mask=latent_mask)
             
-            latents =  (graph_latents + activity_latents)
+            #_, cross_graph_sensor_pred_loss, cross_graph_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
+
+            latent_in = sensor_latents + time_context if self.cfg.addtnl_time_context else sensor_latents
+            _, cross_sensor_graph_pred_loss, cross_sensor_graph_acc = self.object_activity_coembedding_module.decode_graph(
+                                                                                latents=latent_in, 
+                                                                                input_nodes=graph_seq_nodes[:,:-1,:,:],
+                                                                                input_edges=graph_seq_edges[:,:-1,:,:],
+                                                                                dynamic_edges_mask=graph_dynamic_edges_mask[:,:-1,:,:],
+                                                                                output_edges=graph_seq_edges[:,1:,:,:],
+                                                                                activity_relevant_edges = activity_relevant_objects,
+                                                                                activity_mask = latent_mask)
+            
+            _, cross_sensor_activity_pred_loss, cross_sensor_activity_acc = self.object_activity_coembedding_module.decode_activity(
+                                                                                    latents=latent_in, 
+                                                                                    ground_truth=activity_id_seq)
+
+            latent_similarity_loss = self.object_activity_coembedding_module.latent_loss(graph_latents, activity_latents, sensor_latents, mask=latent_mask)
+            
+            latents =  (graph_latents + activity_latents + sensor_latents)
 
             latent_in = latents + time_context if self.cfg.addtnl_time_context else latents
             _, combined_graph_pred_loss, combined_accuracy_object = self.object_activity_coembedding_module.decode_graph(
@@ -316,6 +364,8 @@ class MultiModalUserTrackingModule(LightningModule):
             _, combined_activity_pred_loss, combined_accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                     latents=latents, 
                                                                                     ground_truth=activity_id_seq)
+            
+            _, combined_sensor_pred_loss, combined_accuracy_sensor = self.object_activity_coembedding_module.decode_sensor(latents=latents, ground_truth=sensor_id)
 
             # Latent space prediction
             pred_latents, latent_predictive_loss = self.predict(latents[:,:-1,:], 
@@ -338,6 +388,7 @@ class MultiModalUserTrackingModule(LightningModule):
             _, activity_pred_loss, accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                         latents=latent_in, 
                                                                                         ground_truth=activity_id_seq[:,1:])
+            _, sensor_pred_loss, accuracy_sensor = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id[:,1:,:,:], reshape_offset=1)
 
 
         else:
@@ -350,6 +401,7 @@ class MultiModalUserTrackingModule(LightningModule):
             _, activity_pred_loss, accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                         latents=time_context[:,1:], 
                                                                                         ground_truth=activity_id_seq[:,1:])
+            _, sensor_pred_loss, accuracy_sensor = self.object_activity_coembedding_module.decode_sensor(latents=time_context[:,1:], ground_truth=sensor_id[:,1:])
         
         # Overshoot training
         weighing_factor = 1.0
@@ -388,11 +440,14 @@ class MultiModalUserTrackingModule(LightningModule):
                 _, additional_activity_pred_loss, _ = self.object_activity_coembedding_module.decode_activity(
                                                                                             latents=latent_in, 
                                                                                             ground_truth=activity_id_seq[:,2+i:])
+                
+                _, additional_sensor_pred_loss, _ = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id[:,2+i,:,:])
 
                 pred_edges[graph_dynamic_edges_mask[:,2+i:-1,:,:]] = pred_edges_mixed[graph_dynamic_edges_mask[:,2+i:-1,:,:]]
 
                 graph_pred_loss_overshoot += weighing_factor * additional_graph_pred_loss
                 activity_pred_loss_overshoot += weighing_factor * additional_activity_pred_loss
+                sensor_pred_loss_overshoot += weighing_factor * additional_sensor_pred_loss
             
             weighing_factor *= 0.9
 
@@ -411,7 +466,14 @@ class MultiModalUserTrackingModule(LightningModule):
                       'activity_combined_pred': combined_activity_pred_loss,
                       'latent_similarity': latent_similarity_loss,
                       'latent_pred': latent_predictive_loss,
-                      'latent_pred_oversht': latent_predictive_loss_overshoot
+                      'latent_pred_oversht': latent_predictive_loss_overshoot,
+                      'sensor_pred' : sensor_pred_loss,
+                      'sensor_pred_oversht' : sensor_pred_loss_overshoot,
+                      'sensor_graph_cross_pred' : cross_sensor_graph_pred_loss,
+                      'sensor_activity_cross_pred' : cross_sensor_activity_pred_loss,
+                      'sensor_combined_pred' : combined_sensor_pred_loss,
+                      'object_sensor_cross_pred' : cross_graph_sensor_pred_loss,
+                      'activity_sensor_cross_pred' : cross_activity_sensor_pred_loss,
                       },
             'accuracies' : {
                         'object_used': accuracy_object['used'],
@@ -426,6 +488,13 @@ class MultiModalUserTrackingModule(LightningModule):
                         'object_cross_unused': cross_accuracy_object['unused'],
                         'activity_combined': combined_accuracy_activity,
                         'activity_cross': cross_accuracy_activity,
+                        'sensor' : accuracy_sensor,
+                        'sensor_graph_cross' : cross_sensor_graph_acc,
+                        'sensor_activity_cross' : cross_sensor_activity_acc,
+                        'sensor_pred_overshoot' : sensor_pred_loss_overshoot,
+                        'sensor_combined' : combined_accuracy_sensor,
+                        'object_sensor_cross' : cross_activity_sensor_acc,
+                        'activity_sensor_cros' : cross_graph_sensor_acc,
             },
             'latents' : latent_magn
         }
@@ -623,6 +692,9 @@ class MultiModalUserTrackingModule(LightningModule):
         activity_seq = batch.get('activity_features')[:,:-1,:]
         activity_id_seq = batch['activity_ids'][:,:-1]
 
+        sensor_id = batch['sensor_ids']
+        sensor_seq = batch['sensors']
+
         time_context = batch.get('time_features', torch.zeros((batch['edges'].size()[0],batch['edges'].size()[1], self.cfg.c_len)))[:,1:,:]
         if time_context.size()[-1] > self.cfg.c_len:
             time_context = time_context[:,:,:self.cfg.c_len]
@@ -659,7 +731,8 @@ class MultiModalUserTrackingModule(LightningModule):
         if not self.original_model:
             graph_latents, _, _ = self.object_activity_coembedding_module.autoencode_graph(graph_seq_nodes[:,:pred_seq_len+1,:,:], graph_seq_edges[:,:pred_seq_len+1,:,:], graph_dyn_edges[:,:pred_seq_len+1,:,:], time_context=time_context[:,:pred_seq_len])
             activity_latents, _, _ = self.object_activity_coembedding_module.autoencode_activity(activity_seq[:,:pred_seq_len,:], time_context=time_context[:,:pred_seq_len])
-            latents_forward = (graph_latents+activity_latents)
+            sensor_latents, _, _ = self.object_activity_coembedding_module.autoencode_sensor(sensor_seq=sensor_seq[:, :pred_seq_len, :, :], time_context=time_context[:,:pred_seq_len], reshape_offset=num_steps)
+            latents_forward = (graph_latents+activity_latents+sensor_latents)
             activity_embedding_matrix = batch['activity_embedder'](torch.arange(self.cfg.n_activities).to('cuda')).float().detach()
             initial_latents_forward = deepcopy(latents_forward)
 
@@ -1102,6 +1175,17 @@ class MultiModalUserTrackingModule(LightningModule):
         
         changes_pred = deepcopy(relocation_corrected.argmax(-1) != graph_seq_edges[0,1:pred_seq_len+1,:,:].argmax(-1))
         dest_pred = deepcopy(relocation_corrected.argmax(-1))
+        print('changes pred shape : ' , changes_pred.shape)
+        print('dest pred shape : ' , dest_pred.shape)
+        print('dest gt shape : ' , data_in.dest_gt.shape)
+        print('time context shape : ', time_context[:, 6:108, :].shape)
+        #self.output_results['changes_pred'][curr_step] = torch.cat([self.output_results['changes_pred'][curr_step], deepcopy(changes_pred)], dim=0)
+        #self.output_results['dest_pred'][curr_step] = torch.cat([self.output_results['dest_pred'][curr_step], deepcopy(dest_pred)], dim=0)
+        #self.output_results['dest_gt'][curr_step] = torch.cat([self.output_results['dest_gt'][curr_step], deepcopy(data_in.dest_gt)], dim=0)
+        self.output_results['changes_pred'] = torch.cat([self.output_results['changes_pred'], (deepcopy(changes_pred))], dim=0)
+        self.output_results['dest_pred'] = torch.cat([self.output_results['dest_pred'], (deepcopy(dest_pred))], dim=0)
+        self.output_results['dest_gt'] = torch.cat([self.output_results['dest_gt'], (deepcopy(data_in.dest_gt))], dim=0)
+        self.output_results['time'] = torch.cat([self.output_results['time'], (deepcopy(time_context[:, 6:108, :]))], dim=0)
 
         assert not EXTRACAREFUL or (changes_pred[0,torch.arange(changes_pred.size()[1]), best_queries_obj_viz][oracle_positive_obj & correction_masks & (value_obj>0)]).all()
         assert not EXTRACAREFUL or not (changes_pred[0,torch.arange(changes_pred.size()[1]), best_queries_obj_viz][torch.bitwise_not(oracle_positive_obj) & correction_masks & (value_obj>0)]).any()
@@ -1171,9 +1255,18 @@ class MultiModalUserTrackingModule(LightningModule):
         batch['activity_ids'].masked_fill_(batch['activity_mask_drop'], 0)
 
         results = self(batch)
-        self.log('Train loss',results['loss'])
-        self.log('Train accuracy',results['accuracies'])
-        self.log('Train latents',results['latents'])
+        for key, value in results['loss'].items():
+            self.log(f'Val {key}', value)
+        for key, value in results['accuracies'].items():
+            if isinstance(value, dict):
+                for sub_key, sub_value in value.items():
+                    self.log(f'Val {key} {sub_key}', sub_value, batch_size=batch['activity_features'].size(0))
+            else:
+                self.log(f'Val {key}', value, batch_size=batch['activity_features'].size(0))
+
+    # Log latents
+        for key, value in results['latents'].items():
+            self.log(f'Val {key}', value)
         try:
             self.log('Aux',self.object_activity_coembedding_module.auxiliary_accuracy)
         except Exception as e:
@@ -1207,16 +1300,22 @@ class MultiModalUserTrackingModule(LightningModule):
     def validation_step(self, batch, batch_idx):
         batch['activity_features'].masked_fill_(batch['activity_mask_drop'].unsqueeze(-1).repeat(1,1,batch['activity_features'].size()[-1]), 0)
         results = self(batch)
-        self.log('Val accuracy',results['accuracies'])
-        
+        for key, value in results['accuracies'].items():
+            if isinstance(value, dict):
+                # If the value is a dict, log each sub-value separately
+                for sub_key, sub_value in value.items():
+                    self.log(f'Val {key} {sub_key}', sub_value, batch_size=batch['activity_features'].size(0))
+            else:
+                self.log(f'Val {key}', value, batch_size=batch['activity_features'].size(0))
+
         self.reset_validation()
         self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps)
         
         # Set early stopping metric
-        self.log('Val_ES_accuracy',results['accuracies']['object_used'])
+        self.log('Val_ES_accuracy',results['accuracies']['object_used'], batch_size=batch['activity_features'].size(0))
 
         try:
-            self.log('Aux',self.object_activity_coembedding_module.auxiliary_accuracy)
+            self.log('Aux',self.object_activity_coembedding_module.auxiliary_accuracy, batch_size=batch['activity_features'].size(0))
         except Exception as e:
             print(e)
 
@@ -1298,6 +1397,13 @@ class MultiModalUserTrackingModule(LightningModule):
                     'node_classes':node_classes_in_order, 
                     'obj_time_inconsistency':obj_time_inconsistency_masks,
                     'data':self.result_data}, os.path.join(output_dir,f'raw_results_{suffix}.pt'))
+        
+        print(self.output_results['changes_pred'].shape)
+        print(self.output_results['dest_pred'].shape)
+        print(self.output_results['dest_gt'].shape)
+
+        torch.save({'data' : self.output_results}, os.path.join(output_dir, f'raw_results_future.pt'))
+
         json.dump(get_metrics(self.result_data, node_classes=node_classes_in_order, activity_consistencies=std_for_activity), open(os.path.join(output_dir,f'test_evaluation_splits.json'),'w'), indent=4)
         for qt in self.results_with_clarification.keys():
             self.results_with_clarification[qt]['precision'] = (self.results_with_clarification[qt]['tp'])/(self.results_with_clarification[qt]['tp']+self.results_with_clarification[qt]['fp']+1e-8)

@@ -124,26 +124,26 @@ objects_by_activity = {
         "shaving_cream"
     ],
     "cleaning": [
-        "cleaning_solution",
-        "vacuum_cleaner",
-        "washcloth"
+        #"cleaning_solution",
+        #"vacuum_cleaner",
+        #"washcloth"
     ],
     "leave_home": [
-        "clothes_jacket"
+        #"clothes_jacket"
     ],
     "come_home": [
-        "clothes_jacket",
-        "groceries",
-        "mail"
+        #"clothes_jacket",
+        #"groceries",
+        #"mail"
     ],
     "take_out_trash": [
-        "food_apple",
+        #"food_apple",
         "food_donut",
         "trashbag"
     ],
     "taking_medication": [
-        "drinking_glass",
-        "painkillers"
+        #"drinking_glass",
+        #"painkillers"
     ]
 }
 

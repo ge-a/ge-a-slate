@@ -7,8 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import torch
 from transformers import AutoTokenizer, DistilBertModel
-from utils import color_map, color_palette
-
+from my_utils import color_map, color_palette
 
 def not_a_tree(original_edges, sparse_edges, nodes):
     num_parents = sparse_edges.sum(axis=-1)
@@ -119,14 +118,15 @@ class readClassFiles():
         return self.getter()
 
     def homer_get(self):
-        info = json.load(open(os.path.join(self.dirpath, 'info.json'), 'r'))
+        #info = json.load(open(os.path.join(self.dirpath, 'info.json'), 'r'))
+        print("DATADIR: ", self.dirpath)
         classes = json.load(open(os.path.join(self.dirpath, '..', 'classes.json'), 'r'))
         common_data = {}
         for k in ['dt', 'start_time', 'end_time']:
             if k in classes:
                 common_data[k] = classes[k]
-            else:
-                common_data[k] = info[k]
+            #else:
+            #    common_data[k] = info[k]
         common_data['node_classes'] = ['home'] + [n['class_name'] for n in classes['nodes']]   # if not ignore_node(n)]
         common_data['node_categories'] = ['home'] + [n['category'] for n in classes['nodes']]  # if not ignore_node(n)]
         common_data['activities'] = {}
@@ -169,7 +169,7 @@ class ProcessDataset():
     def __init__(self, 
                  datadir, 
                  output_path,
-                 dataset_type,
+                 dataset_type="HOMER",
                  overwrite=False,
                  stack_in_time=True,
                  coarse=False,
@@ -205,8 +205,7 @@ class ProcessDataset():
         os.makedirs(output_test_path)
 
         self.dataset_type = dataset_type
-
-        self.common_data = readClassFiles(self.dataset_type, datadir, coarse=coarse)()
+        self.common_data = readClassFiles(datadir)()
         if dt is not None: self.common_data['dt'] = dt
         self.common_data['dataset_type'] = self.dataset_type
         self.common_data['multiple_activities'] = multiple_activities(self.dataset_type)
@@ -214,8 +213,8 @@ class ProcessDataset():
         self.LMEmbedding.add_objects(self.common_data['node_classes'])
         self.LMEmbedding.add_activities(self.common_data['activities'])
         
-        self.read_data(readDataFiles(self.dataset_type, data_dir(self.dataset_type, 'test', datadir), self.common_data, coarse=coarse), output_test_path, stack_in_time, index_list=self.common_data['index_list']['test'], plot_graphs=True)
-        self.read_data(readDataFiles(self.dataset_type, data_dir(self.dataset_type, 'train', datadir), self.common_data, coarse=coarse), output_train_path, stack_in_time, index_list=self.common_data['index_list']['train'])
+        self.read_data(readDataFiles(data_dir(self.dataset_type, 'test', datadir), self.common_data, coarse=coarse), output_test_path, stack_in_time, index_list=self.common_data['index_list']['test'], plot_graphs=False)
+        self.read_data(readDataFiles(data_dir(self.dataset_type, 'train', datadir), self.common_data, coarse=coarse), output_train_path, stack_in_time, index_list=self.common_data['index_list']['train'])
         
         self.common_edge_data = {}
         for key in ['seen_edges', 'nonstatic_edges', 'home_graph']:
@@ -263,14 +262,15 @@ class ProcessDataset():
             width, height = 2,0
         for idx in range(datareader.len()):
             graph_sequence, activities, times, filename = datareader.get(idx)
-            nodes, edges, active_edges_mask, class_names = self.read_graphs(graph_sequence)
+            nodes, edges, states, active_edges_mask, class_names = self.read_graphs(graph_sequence)
             if stack_in_time:
-                edges, activities, times = self.stack_routine(edges, activities, times)
+                edges, states, activities, times = self.stack_routine(edges, states, activities, times)
             f_out = os.path.join(output_dir,filename+'.pt')
             index_list.append((filename+'.pt', edges.size()[0]))
             data = {'nodes': nodes, 
                         'edges': edges, 
                         'times': times,
+                        'states': states,
                         'active_edges': active_edges_mask,
                         'activity': activities}
             if plot_graphs:
@@ -297,6 +297,7 @@ class ProcessDataset():
 
     def read_graphs(self, graphs):
         temporary_data = {}
+        can_open = ['bathroom_cabinet', 'trashcan', 'coffee_maker', 'cupboard', 'bookshelf', 'microwave', 'filing_cabinet', 'desk', 'fridge', 'stove']
         temporary_data['node_idx_from_id'] = {}
         temporary_data['node_ids'] = []
         temporary_data['node_class_from_idx'] = []
@@ -304,6 +305,8 @@ class ProcessDataset():
         nodes_in_graph = [node for node in graphs[0]['nodes'] if node['class_name'] not in self.common_data['ignored_node_classes']] + home_node
         num_nodes = len(nodes_in_graph)
         node_features = np.zeros((num_nodes))
+        num_states = 2
+        object_states = np.zeros((len(graphs), num_nodes, num_states))
         nonstatic_edges = torch.Tensor(1 - np.eye(num_nodes))
         for j,n in enumerate(nodes_in_graph):
             node_features[j] = self.get_node_index(n, j, temp_data=temporary_data)
@@ -314,6 +317,14 @@ class ProcessDataset():
         for i,graph in enumerate(graphs):
             for room_node_index in room_node_idxs:
                 edge_features[i,room_node_index, temporary_data['node_idx_from_id'][-1]] = 1
+            for k, n in enumerate(graph['nodes']):
+                if n not in nodes_in_graph or n['class_name'] not in can_open:
+                    continue
+                obj_states = np.full(2, -1)
+                states = n['states']
+                obj_states[0] = 1 if "ON" in states else 0 if "OFF" in states else -1
+                obj_states[1] = 1 if "OPEN" in states else 0 if "CLOSED" in states else -1 if n == "coffee_maker" else -1
+                object_states[i][k] = obj_states
             for e in graph['edges']:
                 if e['relation_type'] in self.common_data['edge_keys'] and e['from_id'] in temporary_data['node_ids'] and e['to_id'] in temporary_data['node_ids']:
                     edge_features[i,temporary_data['node_idx_from_id'][e['from_id']],temporary_data['node_idx_from_id'][e['to_id']]] = 1
@@ -322,15 +333,15 @@ class ProcessDataset():
             edge_features[i, temporary_data['node_idx_from_id'][-1], temporary_data['node_idx_from_id'][-1]] = 1
             if (edge_features[i,:,:].sum(axis=-1)).max() != 1:
                 not_a_tree(original_edges, edge_features[i,:,:], temporary_data['node_class_from_idx'])
-        
-        return torch.Tensor(node_features), torch.Tensor(edge_features), torch.Tensor(nonstatic_edges), temporary_data['node_class_from_idx']
+        return torch.Tensor(node_features), torch.Tensor(edge_features), torch.Tensor(object_states), torch.Tensor(nonstatic_edges), temporary_data['node_class_from_idx']
 
 
-    def stack_routine(self, edges, activities, times):
+    def stack_routine(self, edges, states, activities, times):
         times = torch.cat([times, torch.Tensor([float("Inf")])], dim=-1)
 
         data_idx = -1
         all_edges = []
+        all_states = []
         all_times = []
         all_activities = []
         for t in range(self.common_data['start_time'], self.common_data['end_time']+1, self.common_data['dt']):
@@ -340,13 +351,15 @@ class ProcessDataset():
                     all_activities[-1] = (activities[data_idx]).unsqueeze(0)
                 data_idx += 1
             all_edges.append(edges[data_idx].unsqueeze(0))
+            all_states.append(states[data_idx].unsqueeze(0))
             all_times.append(torch.Tensor([t]))
             all_activities.append((activities[data_idx]).unsqueeze(0))
         stacked_edges = torch.cat(all_edges)
+        stacked_states = torch.cat(all_states)
         stacked_activities = torch.cat(all_activities)
         stacked_times = torch.cat(all_times)
 
-        return stacked_edges, stacked_activities, stacked_times
+        return stacked_edges, stacked_states, stacked_activities, stacked_times
  
     
 

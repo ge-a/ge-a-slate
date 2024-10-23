@@ -2,6 +2,7 @@ import sys
 import yaml
 import json
 import os
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 import argparse
 import time
 sys.path.append('helpers')
@@ -15,9 +16,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import EarlyStopping
 
-from MultiModalUserTracking import MultiModalUserTrackingModule
-from loader_sequential import RoutinesDataset
-from encoders import TimeEncodingOptions
+from models.MultiModalUserTracking import MultiModalUserTrackingModule
+from helpers.loader_sequential import RoutinesDataset
+from helpers.encoders import TimeEncodingOptions
 
 import random
 from numpy import random as nrandom
@@ -70,7 +71,7 @@ def run(data, group=None, cfg = {}, tags=[], logs_dir='logs', original_model=Fal
             model_configs.loss_activity_pred = False
 
         early_stop_callback = EarlyStopping(monitor="Val_ES_accuracy", patience=40, verbose=False, mode="max")
-        trainer = Trainer(accelerator='gpu', devices = torch.cuda.device_count(), logger=wandb_logger, max_epochs=epochs, log_every_n_steps=1, callbacks=[ckpt_callback, early_stop_callback], check_val_every_n_epoch=5)
+        trainer = Trainer(accelerator='gpu', devices = 1, logger=wandb_logger, max_epochs=epochs, log_every_n_steps=1, callbacks=[ckpt_callback, early_stop_callback], check_val_every_n_epoch=5)
         model = model_generator(model_configs = model_configs, original_model = original_model)
         model.set_object_consistency(data.get_object_consistency())
         model.cfg.query_types = []
@@ -83,7 +84,7 @@ def run(data, group=None, cfg = {}, tags=[], logs_dir='logs', original_model=Fal
 
             ckpt_callback = ModelCheckpoint(dirpath=output_dir)
             early_stop_callback = EarlyStopping(monitor="Val_ES_accuracy", patience=40, verbose=False, mode="max")
-            trainer = Trainer(accelerator='gpu', devices = torch.cuda.device_count(), logger=wandb_logger, max_epochs=epochs, log_every_n_steps=1, callbacks=[ckpt_callback, early_stop_callback], check_val_every_n_epoch=5)
+            trainer = Trainer(accelerator='gpu', devices = 1, logger=wandb_logger, max_epochs=epochs, log_every_n_steps=1, callbacks=[ckpt_callback, early_stop_callback], check_val_every_n_epoch=5)
             model = model_generator(model_configs = model_configs, original_model = original_model)
             model.set_object_consistency(data.get_object_consistency())
             trainer.fit(model, train_loader, val_loader)
@@ -99,7 +100,7 @@ def run(data, group=None, cfg = {}, tags=[], logs_dir='logs', original_model=Fal
         checkpoint_file = [f for f in os.listdir(checkpoint_dir) if f.endswith('.ckpt')]
         assert len(checkpoint_file) == 1, f"None or many checkpoint files in directory {checkpoint_dir}: {checkpoint_file}"
         checkpoint_file = checkpoint_file[0]
-        trainer = Trainer(accelerator='gpu', devices = torch.cuda.device_count(), logger=wandb_logger)
+        trainer = Trainer(accelerator='gpu', devices = 1, logger=wandb_logger)
         config_file = os.path.join(checkpoint_dir, 'config.json')
         if os.path.exists(config_file):
             model_configs.update(json.load(open(config_file)))
@@ -108,6 +109,7 @@ def run(data, group=None, cfg = {}, tags=[], logs_dir='logs', original_model=Fal
 
     if not train_only:
         model.set_object_consistency(data.get_object_consistency())
+        print(type(data.get_object_consistency()))
         eval_dir = os.path.join(output_dir,'test_evals_'+timestr)
         model.test_forward = False
         model.cfg.query_types = cfg['query_types']
