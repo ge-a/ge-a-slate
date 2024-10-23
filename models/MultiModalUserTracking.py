@@ -218,10 +218,7 @@ class MultiModalUserTrackingModule(LightningModule):
         activity_seq = batch['activity_features'][:,:-1,:]
         activity_id_seq = batch['activity_ids'][:,:-1]
         latent_mask = batch['activity_mask_drop'][:,:-1]
-        
-        sensor_id = batch['sensor_ids']
-        sensor_seq = batch['sensors']
-        
+    
         time_context = batch.get('time_features', torch.zeros((batch['edges'].size()[0],batch['edges'].size()[1], batch['edges'].size()[2], self.cfg.c_len)))
         time_context = time_context[:,1:,:]
         assert time_context.size()[2] <= self.cfg.c_len, f"Config of size {self.cfg.c_len} does not fit time context of size {time_context.size()[2]}"
@@ -254,24 +251,6 @@ class MultiModalUserTrackingModule(LightningModule):
         assert self.cfg.n_nodes == num_t_nodes, (str(self.cfg.n_nodes) +'!='+ str(num_t_nodes))
 
         # Results Initialization for when not populated
-        cross_graph_sensor_pred_loss = torch.Tensor([0.]).to('cuda')
-        cross_activity_sensor_pred_loss = torch.Tensor([0.]).to('cuda')
-        cross_sensor_graph_pred_loss = torch.Tensor([0.]).to('cuda')
-        cross_sensor_activity_pred_loss = torch.Tensor([0.]).to('cuda')
-
-        cross_graph_sensor_acc = torch.Tensor([0.]).to('cuda')
-        cross_activity_sensor_acc = torch.Tensor([0.]).to('cuda')
-        cross_sensor_graph_acc = torch.Tensor([0.]).to('cuda')
-        cross_sensor_activity_acc = torch.Tensor([0.]).to('cuda')
-
-        combined_accuracy_sensor = torch.Tensor([0.]).to('cuda')
-        combined_sensor_pred_loss = torch.Tensor([0.]).to('cuda')
-
-        sensor_pred_loss = torch.Tensor([0.]).to('cuda')
-        accuracy_sensor = torch.Tensor([0.]).to('cuda')
-
-        sensor_pred_loss_overshoot = torch.Tensor([0.]).to('cuda')
-
         graph_autoenc_loss = torch.Tensor([0.]).to('cuda')
         activity_autoenc_loss = torch.Tensor([0.]).to('cuda')
         latent_similarity_loss = torch.Tensor([0.]).to('cuda')
@@ -312,9 +291,6 @@ class MultiModalUserTrackingModule(LightningModule):
 
             activity_latents, activity_autoenc_loss, accuracy_activity_autoenc = self.object_activity_coembedding_module.autoencode_activity(activity_seq, activity_gt=activity_id_seq, time_context=time_context)
 
-            # Encode sensors
-            sensor_latents, sensor_autoenc_loss, accuracy_sensor_autoenc = self.object_activity_coembedding_module.autoencode_sensor(sensor_seq, sensor_gt=sensor_id, time_context=time_context)
-
             # Latent training
             latent_in = activity_latents + time_context if self.cfg.addtnl_time_context else activity_latents
             _, cross_graph_pred_loss, cross_accuracy_object = self.object_activity_coembedding_module.decode_graph(
@@ -331,23 +307,11 @@ class MultiModalUserTrackingModule(LightningModule):
                                                                                     latents=latent_in, 
                                                                                     ground_truth=activity_id_seq)
             
-            latent_in = sensor_latents + time_context if self.cfg.addtnl_time_context else sensor_latents
-            _, cross_sensor_graph_pred_loss, cross_sensor_graph_acc = self.object_activity_coembedding_module.decode_graph(
-                                                                                latents=latent_in, 
-                                                                                input_nodes=graph_seq_nodes[:,:-1,:,:],
-                                                                                input_edges=graph_seq_edges[:,:-1,:,:],
-                                                                                dynamic_edges_mask=graph_dynamic_edges_mask[:,:-1,:,:],
-                                                                                output_edges=graph_seq_edges[:,1:,:,:],
-                                                                                activity_relevant_edges = activity_relevant_objects,
-                                                                                activity_mask = latent_mask)
-            
-            _, cross_sensor_activity_pred_loss, cross_sensor_activity_acc = self.object_activity_coembedding_module.decode_activity(
-                                                                                    latents=latent_in, 
-                                                                                    ground_truth=activity_id_seq)
+    
 
-            latent_similarity_loss = self.object_activity_coembedding_module.latent_loss(graph_latents, activity_latents, sensor_latents, mask=latent_mask)
+            latent_similarity_loss = self.object_activity_coembedding_module.latent_loss(graph_latents, activity_latents, mask=latent_mask)
             
-            latents =  (graph_latents + activity_latents + sensor_latents)
+            latents =  (graph_latents + activity_latents)
 
             latent_in = latents + time_context if self.cfg.addtnl_time_context else latents
             _, combined_graph_pred_loss, combined_accuracy_object = self.object_activity_coembedding_module.decode_graph(
@@ -360,8 +324,6 @@ class MultiModalUserTrackingModule(LightningModule):
             _, combined_activity_pred_loss, combined_accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                     latents=latents, 
                                                                                     ground_truth=activity_id_seq)
-            
-            _, combined_sensor_pred_loss, combined_accuracy_sensor = self.object_activity_coembedding_module.decode_sensor(latents=latents, ground_truth=sensor_id)
 
             # Latent space prediction
             pred_latents, latent_predictive_loss = self.predict(latents[:,:-1,:], 
@@ -384,7 +346,6 @@ class MultiModalUserTrackingModule(LightningModule):
             _, activity_pred_loss, accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                         latents=latent_in, 
                                                                                         ground_truth=activity_id_seq[:,1:])
-            _, sensor_pred_loss, accuracy_sensor = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id[:,1:,:,:], reshape_offset=1)
 
 
         else:
@@ -397,7 +358,6 @@ class MultiModalUserTrackingModule(LightningModule):
             _, activity_pred_loss, accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                         latents=time_context[:,1:], 
                                                                                         ground_truth=activity_id_seq[:,1:])
-            _, sensor_pred_loss, accuracy_sensor = self.object_activity_coembedding_module.decode_sensor(latents=time_context[:,1:], ground_truth=sensor_id[:,1:])
         
         # Overshoot training
         weighing_factor = 1.0
@@ -436,14 +396,11 @@ class MultiModalUserTrackingModule(LightningModule):
                 _, additional_activity_pred_loss, _ = self.object_activity_coembedding_module.decode_activity(
                                                                                             latents=latent_in, 
                                                                                             ground_truth=activity_id_seq[:,2+i:])
-                
-                _, additional_sensor_pred_loss, _ = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id[:,2+i,:,:])
 
                 pred_edges[graph_dynamic_edges_mask[:,2+i:-1,:,:]] = pred_edges_mixed[graph_dynamic_edges_mask[:,2+i:-1,:,:]]
 
                 graph_pred_loss_overshoot += weighing_factor * additional_graph_pred_loss
                 activity_pred_loss_overshoot += weighing_factor * additional_activity_pred_loss
-                sensor_pred_loss_overshoot += weighing_factor * additional_sensor_pred_loss
             
             weighing_factor *= 0.9
 
@@ -462,14 +419,7 @@ class MultiModalUserTrackingModule(LightningModule):
                       'activity_combined_pred': combined_activity_pred_loss,
                       'latent_similarity': latent_similarity_loss,
                       'latent_pred': latent_predictive_loss,
-                      'latent_pred_oversht': latent_predictive_loss_overshoot,
-                      'sensor_pred' : sensor_pred_loss,
-                      'sensor_pred_oversht' : sensor_pred_loss_overshoot,
-                      'sensor_graph_cross_pred' : cross_sensor_graph_pred_loss,
-                      'sensor_activity_cross_pred' : cross_sensor_activity_pred_loss,
-                      'sensor_combined_pred' : combined_sensor_pred_loss,
-                      'object_sensor_cross_pred' : cross_graph_sensor_pred_loss,
-                      'activity_sensor_cross_pred' : cross_activity_sensor_pred_loss,
+                      'latent_pred_oversht': latent_predictive_loss_overshoot
                       },
             'accuracies' : {
                         'object_used': accuracy_object['used'],
@@ -483,14 +433,7 @@ class MultiModalUserTrackingModule(LightningModule):
                         'object_combined_unused': combined_accuracy_object['unused'],
                         'object_cross_unused': cross_accuracy_object['unused'],
                         'activity_combined': combined_accuracy_activity,
-                        'activity_cross': cross_accuracy_activity,
-                        'sensor' : accuracy_sensor,
-                        'sensor_graph_cross' : cross_sensor_graph_acc,
-                        'sensor_activity_cross' : cross_sensor_activity_acc,
-                        'sensor_pred_overshoot' : sensor_pred_loss_overshoot,
-                        'sensor_combined' : combined_accuracy_sensor,
-                        'object_sensor_cross' : cross_activity_sensor_acc,
-                        'activity_sensor_cros' : cross_graph_sensor_acc,
+                        'activity_cross': cross_accuracy_activity
             },
             'latents' : latent_magn
         }
@@ -688,9 +631,6 @@ class MultiModalUserTrackingModule(LightningModule):
         activity_seq = batch.get('activity_features')[:,:-1,:]
         activity_id_seq = batch['activity_ids'][:,:-1]
 
-        sensor_id = batch['sensor_ids']
-        sensor_seq = batch['sensors']
-
         time_context = batch.get('time_features', torch.zeros((batch['edges'].size()[0],batch['edges'].size()[1], self.cfg.c_len)))[:,1:,:]
         if time_context.size()[-1] > self.cfg.c_len:
             time_context = time_context[:,:,:self.cfg.c_len]
@@ -727,8 +667,7 @@ class MultiModalUserTrackingModule(LightningModule):
         if not self.original_model:
             graph_latents, _, _ = self.object_activity_coembedding_module.autoencode_graph(graph_seq_nodes[:,:pred_seq_len+1,:,:], graph_seq_edges[:,:pred_seq_len+1,:,:], graph_dyn_edges[:,:pred_seq_len+1,:,:], time_context=time_context[:,:pred_seq_len])
             activity_latents, _, _ = self.object_activity_coembedding_module.autoencode_activity(activity_seq[:,:pred_seq_len,:], time_context=time_context[:,:pred_seq_len])
-            sensor_latents, _, _ = self.object_activity_coembedding_module.autoencode_sensor(sensor_seq=sensor_seq[:, :pred_seq_len, :, :], time_context=time_context[:,:pred_seq_len], reshape_offset=num_steps)
-            latents_forward = (graph_latents+activity_latents+sensor_latents)
+            latents_forward = (graph_latents+activity_latents)
             activity_embedding_matrix = batch['activity_embedder'](torch.arange(self.cfg.n_activities).to('cuda')).float().detach()
             initial_latents_forward = deepcopy(latents_forward)
 
