@@ -137,38 +137,6 @@ class ObjectActivityCoembeddingModule(LightningModule):
         self.activity_decoder_mlp = nn.Sequential(nn.Linear(self.embedding_size, self.embedding_size),
                                                     nn.ReLU(),
                                                     nn.Linear(self.embedding_size, self.cfg.n_activities))
-        
-        ### Sensor AutoEncoder ###
-        self.num_sensor_states = 3
-        self.num_sensors = 2
-        self.num_obj =81
-
-        self.embed_context_sensor = nn.Linear(self.num_obj * self.num_sensors * self.num_sensor_states, self.individual_embedding_size, bias=False)
-
-        self.sensor_decoder_mlp = nn.Sequential(nn.Linear(self.embedding_size, self.embedding_size),
-                                                    nn.ReLU(),
-                                                    nn.Linear(self.embedding_size, 81 * self.num_sensors * self.num_sensor_states))
-
-    
-    def sensor_prediction_loss(self, x, y):
-        y = y+1
-        return (nn.CrossEntropyLoss(reduction='none')(x.permute(0, 4, 1, 2, 3), y.long())[y != 0]).mean()
-    
-    def sensor_accuracy(self, x, y):
-        # Step 1: Convert logits to predicted states
-        predicted_indices = x.argmax(dim=-1)  # Shape: (batch_size, sequence_len, num_sensors)
-
-        # Map indices to actual states: 0 -> -1, 1 -> 0, 2 -> 1
-        predicted_states = torch.where(predicted_indices == 0, torch.tensor(-1), 
-                                torch.where(predicted_indices == 1, torch.tensor(0), torch.tensor(1)))
-
-        # Step 2: Compare predictions with ground truth
-        correct_predictions = (predicted_states == y)  # Shape: (batch_size, sequence_len, num_sensors)
-
-        # Step 3: Calculate accuracy excluding samples where ground truth is -1
-        mask = (y != -1)  # Create a mask to exclude invalid states
-        accuracy = correct_predictions[mask].sum().float() / mask.sum().float()
-        return accuracy
 
     def activity_prediction_loss(self, x, y):
         if self.cfg.multiple_activities:
@@ -220,17 +188,6 @@ class ObjectActivityCoembeddingModule(LightningModule):
         """
         return self.latent_obj(self.embed_context_activity(activity.float()), self.cfg.learn_latent_magnitude)
         # return self.embed_context_activity(activity.float())
-
-    def sensor_encoder(self, sensor_data):
-        """
-        Args:
-            sensor_data: batch_size x sequence_length x num_sensors x num_sensor_states
-        Return:
-            _: batch_size x sequence_length x num_sensors x num_sensor_states
-        """
-        sensor_data_flattened = sensor_data.view(sensor_data.size(0), sensor_data.size(1), -1)
-
-        return self.latent_obj(self.embed_context_sensor(sensor_data_flattened.float()), self.cfg.learn_latent_magnitude)
 
 
     def latent_loss(self, latent_obj, latent_act, latent_sens=None, mask=True, allow_regularization=True):
@@ -356,40 +313,6 @@ class ObjectActivityCoembeddingModule(LightningModule):
             graph_pred_accuracy['unused'] = (pred_edges.argmax(-1) == output_edges.argmax(-1))[unused_mask].sum()/(unused_mask.sum()+1e-8)
 
         return pred_edges, graph_pred_loss, graph_pred_accuracy
-    
-    def autoencode_sensor(self, sensor_seq, sensor_gt=None, time_context=None, reshape_offset=0):
-        sensor_latents = self.sensor_encoder(sensor_seq)
-        latent_in = sensor_latents + time_context if self.cfg.addtnl_time_context else sensor_latents
-        _, sensor_autoenc_loss, sensor_autoenc_accuracy = self.decode_sensor(latent_in, ground_truth=sensor_gt, reshape_offset=reshape_offset)
-
-        return sensor_latents, sensor_autoenc_loss, sensor_autoenc_accuracy
-    
-    def decode_sensor(self, latents, ground_truth=None, reshape_offset=0):
-        """
-        Args:
-            latent_vector: batch_size x sequence_length x embedding_size
-            ground_truth: batch_size x sequence_length x num_sensors
-        Return:
-            output_sensor: batch_size x sequence_length x num_sensors x num_sensor_states
-            sensor_pred_loss: batch_size x sequence_length
-        """
-   
-        if isinstance(latents, Latent): latents = latents.sample()
-        if self.cfg.learn_latent_magnitude:
-            latents = F.normalize(latents, dim=-1)
-        output_sensor = self.sensor_decoder_mlp(latents)
-        output_sensor = output_sensor.view(1, 124 - reshape_offset, 81, 2, 3)
-
-        sensor_pred_loss = None
-        sensor_pred_acc = None
-        if ground_truth is not None:
-
-            sensor_pred_loss = self.sensor_prediction_loss(output_sensor, ground_truth)
-            sensor_pred_acc = self.sensor_accuracy(output_sensor, ground_truth)
-            
-        output_sensor = F.softmax(output_sensor, dim=-1)
-
-        return output_sensor, sensor_pred_loss, sensor_pred_acc
 
     def autoencode_activity(self, activity_seq, time_context=None, activity_gt=None):
         activity_latents = self.activity_encoder(activity_seq)
@@ -424,20 +347,18 @@ class ObjectActivityCoembeddingModule(LightningModule):
         return output_activity, activity_pred_loss, activity_pred_acc
 
 
-    def forward(self, graph_seq_nodes, graph_seq_edges, graph_dynamic_edges_mask, activity_seq, sensor_seq, graph_seq_dyn_edges=None):
+    def forward(self, graph_seq_nodes, graph_seq_edges, graph_dynamic_edges_mask, activity_seq, graph_seq_dyn_edges=None):
         """
         Args:
             graph_seq_nodes: batch_size x sequence_length+1 x num_nodes x node_feature_len
             graph_seq_edges: batch_size x sequence_length+1 x num_nodes x num_nodes x edge_feature_len
             activity_seq: batch_size x sequence_length
-            sensor_seq: batch_size x sequence_length x context_length
         """
 
 
         batch_size, num_nodes, node_feature_len = graph_seq_nodes.size()
         batch_size_e, num_f_nodes, num_t_nodes = graph_seq_edges.size()
         batch_size_act, num_act = activity_seq.size()
-        batch_size_sens, num_sens, num_sens_states = sensor_seq.size()
 
         self.cfg.n_nodes = num_nodes
         
@@ -448,16 +369,12 @@ class ObjectActivityCoembeddingModule(LightningModule):
         assert self.cfg.n_nodes == num_f_nodes, (str(self.cfg.n_nodes) +'!='+ str(num_f_nodes))
         assert self.cfg.n_nodes == num_t_nodes, (str(self.cfg.n_nodes) +'!='+ str(num_t_nodes))
         assert self.cfg.n_activities == num_act, (str(self.cfg.n_activities) +'!='+ str(num_act))
-        assert self.cfg.n_sens == num_sens, (str(self.cfg.n_sens) +'!='+ str(num_sens))
-        assert self.cfg.n_sens_states == num_sens_states, (str(self.cfg.n_sens_states) +'!='+ str(num_sens_states))
 
         graph_latents, graph_autoenc_loss, accuracy_object_autoenc = self.autoencode_graph(graph_seq_nodes.unsqueeze(0), graph_seq_edges.unsqueeze(0), graph_dynamic_edges_mask.unsqueeze(0))
 
         graph_latents = graph_latents.squeeze(0)
 
         activity_latents, activity_autoenc_loss, accuracy_activity_autoenc = self.autoencode_activity(activity_seq)
-        
-        sensor_latents, sensor_autoenc_loss, accuracy_sensor_autoenc = self.autoencode_sensor(sensor_seq)
 
         _, cross_graph_pred_loss, cross_accuracy_object = self.decode_graph(latents=activity_latents, 
                                                                     input_nodes=graph_seq_nodes[:,:,:].unsqueeze(0),
@@ -468,16 +385,7 @@ class ObjectActivityCoembeddingModule(LightningModule):
         _, cross_activity_pred_loss, cross_accuracy_activity = self.decode_activity(latents=graph_latents, 
                                                                                 ground_truth=activity_seq)
         
-        _, cross_sensor_pred_loss, cross_accuracy_sensor = self.decode_sensor(latents=sensor_latents, 
-                                                                                ground_truth=sensor_seq)
-                                                                                        
-        latent_similarity_loss = self.latent_loss(graph_latents, activity_latents, sensor_latents) # rewrite this?
-
-        print("SENSOR DATA")
-        print("sensor seq shape: ", sensor_seq.shape)
-        print("sensor latent shape: ", sensor_latents.size())
-        print("sensor loss: ", sensor_autoenc_loss)
-        print("sensor accuracy: ", accuracy_sensor_autoenc)
+        latent_similarity_loss = self.latent_loss(graph_latents, activity_latents)
 
 
         results = {
@@ -486,19 +394,15 @@ class ObjectActivityCoembeddingModule(LightningModule):
                       'object_cross_pred': cross_graph_pred_loss,
                       'activity_autoencoder': activity_autoenc_loss,
                       'activity_cross_pred': cross_activity_pred_loss,
-                      'sensor_autoencoder' : sensor_autoenc_loss,
-                      'sensor_cross_pred' : cross_sensor_pred_loss,
                       'latent_similarity': latent_similarity_loss,
                       },
             'accuracies' : {
                         'object_autoenc_used': accuracy_object_autoenc['used'],
                         'object_autoenc_unused': accuracy_object_autoenc['unused'],
                         'activity_autoenc': accuracy_activity_autoenc,
-                        'sensor_autoenc' : accuracy_sensor_autoenc,
                         'object_cross_used': cross_accuracy_object['used'],
                         'object_cross_unused': cross_accuracy_object['unused'],
                         'activity_cross': cross_accuracy_activity,
-                        'sensor_cross' : cross_accuracy_sensor,
                         }
         }
 
