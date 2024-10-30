@@ -211,6 +211,15 @@ class MultiModalUserTrackingModule(LightningModule):
             time_context             : batch_size x sequence_length+1 x context_length
         """
         print(batch.keys())
+
+        """
+        print("EDGES SHAPE: ", batch['edges'].shape)
+        print("SENSORS SHAPE: ", batch['sensors'].shape)
+        print("ACTFEAT SHAPE: ", batch['activity_features'].shape)
+        print("TIEM SHAPE: ", batch['time'].shape)
+        print(batch['time'])
+        """
+
         graph_seq_nodes = batch['node_features'].float()
         graph_seq_edges = batch['edges'].float()
         assert not EXTRACAREFUL or torch.allclose(graph_seq_edges.sum(-1), torch.ones_like(graph_seq_edges.sum(-1)), atol=0.1), "Edges are not normalized!"
@@ -316,6 +325,7 @@ class MultiModalUserTrackingModule(LightningModule):
             sensor_latents, sensor_autoenc_loss, accuracy_sensor_autoenc = self.object_activity_coembedding_module.autoencode_sensor(sensor_seq, sensor_gt=sensor_id, time_context=time_context)
 
             # Latent training
+            # Latent training
             latent_in = activity_latents + time_context if self.cfg.addtnl_time_context else activity_latents
             _, cross_graph_pred_loss, cross_accuracy_object = self.object_activity_coembedding_module.decode_graph(
                                                                         latents=latent_in, 
@@ -326,11 +336,15 @@ class MultiModalUserTrackingModule(LightningModule):
                                                                         activity_relevant_edges = activity_relevant_objects,
                                                                         activity_mask = latent_mask)
             
+            _, cross_activity_sensor_pred_loss, cross_activity_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
+
             latent_in = graph_latents + time_context if self.cfg.addtnl_time_context else graph_latents
             _, cross_activity_pred_loss, cross_accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                     latents=latent_in, 
                                                                                     ground_truth=activity_id_seq)
             
+            _, cross_graph_sensor_pred_loss, cross_graph_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
+
             latent_in = sensor_latents + time_context if self.cfg.addtnl_time_context else sensor_latents
             _, cross_sensor_graph_pred_loss, cross_sensor_graph_acc = self.object_activity_coembedding_module.decode_graph(
                                                                                 latents=latent_in, 
@@ -680,7 +694,6 @@ class MultiModalUserTrackingModule(LightningModule):
 
 
     def evaluate_prediction(self, batch, num_steps=1):
-
         graph_seq_nodes = batch.get('node_features').float()
         graph_seq_edges = batch.get('edges')
         assert not EXTRACAREFUL or torch.allclose(graph_seq_edges.sum(-1), torch.ones_like(graph_seq_edges.sum(-1)), atol=0.1), "Edges are not normalized!"
