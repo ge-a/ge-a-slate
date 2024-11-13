@@ -141,9 +141,10 @@ class ObjectActivityCoembeddingModule(LightningModule):
         ### Sensor AutoEncoder ###
         self.num_sensor_states = 3
         self.num_sensors = 2
-        self.num_obj =81
+        self.num_nodes = 81
 
-        self.embed_context_sensor = nn.Linear(self.num_obj * self.num_sensors * self.num_sensor_states, self.individual_embedding_size, bias=False)
+        self.embed_context_sensor = nn.Linear(self.num_sensors * self.num_sensor_states, self.individual_embedding_size, bias=False)
+        self.embed_nodes_sensor = nn.Linear(self.num_nodes * self.individual_embedding_size, self.individual_embedding_size, bias=False)
 
         self.sensor_decoder_mlp = nn.Sequential(nn.Linear(self.embedding_size, self.embedding_size),
                                                     nn.ReLU(),
@@ -228,9 +229,12 @@ class ObjectActivityCoembeddingModule(LightningModule):
         Return:
             _: batch_size x sequence_length x num_sensors x num_sensor_states
         """
-        sensor_data_flattened = sensor_data.view(sensor_data.size(0), sensor_data.size(1), -1)
+        sensor_data_flattened = sensor_data.view(sensor_data.size(0), sensor_data.size(1), sensor_data.size(2), -1)
+        sensor_state_embed = self.embed_context_sensor(sensor_data_flattened.float())
+        sensor_state_embed_flattened = sensor_state_embed.view(sensor_state_embed.size(0), sensor_data.size(1), -1)
+        sensor_node_embed = self.embed_nodes_sensor(sensor_state_embed_flattened.float())
 
-        return self.latent_obj(self.embed_context_sensor(sensor_data_flattened.float()), self.cfg.learn_latent_magnitude)
+        return self.latent_obj(sensor_node_embed, self.cfg.learn_latent_magnitude)
 
 
     def latent_loss(self, latent_obj, latent_act, latent_sens=None, mask=True, allow_regularization=True):
