@@ -387,10 +387,9 @@ class ObjectActivityCoembeddingModule(LightningModule):
         sensor_pred_loss = None
         sensor_pred_acc = None
         if ground_truth is not None:
-
+            
             sensor_pred_loss = self.sensor_prediction_loss(output_sensor, ground_truth)
             sensor_pred_acc = self.sensor_accuracy(output_sensor, ground_truth)
-            
         output_sensor = F.softmax(output_sensor, dim=-1)
 
         return output_sensor, sensor_pred_loss, sensor_pred_acc

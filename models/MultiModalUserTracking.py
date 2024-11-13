@@ -20,6 +20,8 @@ from helpers.my_utils import color_palette, get_metrics, wrap_str, stringify_out
 random.seed(23435)
 np.random.seed(23435)
 
+sensor_loss = {}
+
 class MultiModalUserTrackingModule(LightningModule):
     def __init__(self, model_configs, original_model=False):
         
@@ -333,14 +335,14 @@ class MultiModalUserTrackingModule(LightningModule):
                                                                         activity_relevant_edges = activity_relevant_objects,
                                                                         activity_mask = latent_mask)
             
-            _, cross_activity_sensor_pred_loss, cross_activity_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
+            #_, cross_activity_sensor_pred_loss, cross_activity_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
 
             latent_in = graph_latents + time_context if self.cfg.addtnl_time_context else graph_latents
             _, cross_activity_pred_loss, cross_accuracy_activity = self.object_activity_coembedding_module.decode_activity(
                                                                                     latents=latent_in, 
                                                                                     ground_truth=activity_id_seq)
             
-            _, cross_graph_sensor_pred_loss, cross_graph_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
+            #_, cross_graph_sensor_pred_loss, cross_graph_sensor_acc = self.object_activity_coembedding_module.decode_sensor(latents=latent_in, ground_truth=sensor_id)
 
             latent_in = sensor_latents + time_context if self.cfg.addtnl_time_context else sensor_latents
             _, cross_sensor_graph_pred_loss, cross_sensor_graph_acc = self.object_activity_coembedding_module.decode_graph(
@@ -475,12 +477,13 @@ class MultiModalUserTrackingModule(LightningModule):
                       'latent_pred': latent_predictive_loss,
                       'latent_pred_oversht': latent_predictive_loss_overshoot,
                       'sensor_pred' : sensor_pred_loss,
+                      'sensor_autoencoder': sensor_autoenc_loss,
                       'sensor_pred_oversht' : sensor_pred_loss_overshoot,
                       'sensor_graph_cross_pred' : cross_sensor_graph_pred_loss,
                       'sensor_activity_cross_pred' : cross_sensor_activity_pred_loss,
                       'sensor_combined_pred' : combined_sensor_pred_loss,
-                      'object_sensor_cross_pred' : cross_graph_sensor_pred_loss,
-                      'activity_sensor_cross_pred' : cross_activity_sensor_pred_loss,
+                      #'object_sensor_cross_pred' : cross_graph_sensor_pred_loss,
+                      #'activity_sensor_cross_pred' : cross_activity_sensor_pred_loss,
                       },
             'accuracies' : {
                         'object_used': accuracy_object['used'],
@@ -496,12 +499,13 @@ class MultiModalUserTrackingModule(LightningModule):
                         'activity_combined': combined_accuracy_activity,
                         'activity_cross': cross_accuracy_activity,
                         'sensor' : accuracy_sensor,
+                        'sensor_autoenc' : accuracy_sensor_autoenc,
                         'sensor_graph_cross' : cross_sensor_graph_acc,
                         'sensor_activity_cross' : cross_sensor_activity_acc,
                         'sensor_pred_overshoot' : sensor_pred_loss_overshoot,
                         'sensor_combined' : combined_accuracy_sensor,
-                        'object_sensor_cross' : cross_activity_sensor_acc,
-                        'activity_sensor_cros' : cross_graph_sensor_acc,
+                        #'object_sensor_cross' : cross_activity_sensor_acc,
+                        #'activity_sensor_cros' : cross_graph_sensor_acc,
             },
             'latents' : latent_magn
         }
@@ -1284,14 +1288,21 @@ class MultiModalUserTrackingModule(LightningModule):
         if not self.original_model:   
             res += results['loss']['object_autoencoder']
             res += results['loss']['activity_autoencoder']
+            res += results['loss']['sensor_autoencoder']
             if self.cfg.loss_object_cross:
                 res += results['loss']['object_cross_pred']
             if self.cfg.loss_activity_cross:
                 res += results['loss']['activity_cross_pred']
+            if self.cfg.loss_sensor_graph_cross:
+                res += results['loss']['sensor_graph_cross_pred']
+            if self.cfg.loss_sensor_activity_cross:
+                res += results['loss']['sensor_activity_cross_pred']
             if self.cfg.loss_object_combined:
                 res += results['loss']['object_combined_pred']
             if self.cfg.loss_activity_combined:
                 res += results['loss']['activity_combined_pred']
+            if self.cfg.loss_sensor_combined:
+                res += results['loss']['sensor_combined_pred']
             if self.cfg.loss_latent_similarity:
                 res += results['loss']['latent_similarity'] * self.cfg.latent_similarity_weight
             if self.cfg.loss_latent_pred:
@@ -1300,6 +1311,8 @@ class MultiModalUserTrackingModule(LightningModule):
                 res += results['loss']['object_pred'] + results['loss']['object_pred_oversht']
             if self.cfg.loss_activity_pred:
                 res += results['loss']['activity_pred'] + results['loss']['activity_pred_oversht']
+            if self.cfg.loss_sensor_pred:
+                res += results['loss']['sensor_pred'] + results['loss']['sensor_pred_oversht']
         else:
             res += results['loss']['object_pred']
             res += results['loss']['activity_pred']
