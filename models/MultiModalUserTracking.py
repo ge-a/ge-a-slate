@@ -15,7 +15,7 @@ from torch.nn import functional as F
 from torch.optim import Adam
 from pytorch_lightning.core import LightningModule
 from ObjectActivityCoembedding import ObjectActivityCoembeddingModule, Latent, LatentDeterministic, EXTRACAREFUL
-from helpers.my_utils import color_palette, get_metrics, wrap_str
+from helpers.my_utils import color_palette, get_metrics, wrap_str, stringify_output
 
 random.seed(23435)
 np.random.seed(23435)
@@ -191,7 +191,6 @@ class MultiModalUserTrackingModule(LightningModule):
 
     def predict(self, latents, time_context, latents_expected=None):
         if isinstance(latents, Latent): latents = latents.sample()
-
         pred_latents = self.seq_encoder(latents, time_context, seq_type='predictive')
         
         latent_predictive_loss = torch.Tensor([0.]).to('cuda')
@@ -315,7 +314,6 @@ class MultiModalUserTrackingModule(LightningModule):
         output_edges_forward = graph_seq_edges[:,2:,:,:]
 
         if not self.original_model:
-
             # Encode graphs and activities
             graph_latents, graph_autoenc_loss, accuracy_object_autoenc = self.object_activity_coembedding_module.autoencode_graph(graph_seq_nodes, graph_seq_edges, graph_dynamic_edges_mask, time_context=time_context)
 
@@ -324,7 +322,6 @@ class MultiModalUserTrackingModule(LightningModule):
             # Encode sensors
             sensor_latents, sensor_autoenc_loss, accuracy_sensor_autoenc = self.object_activity_coembedding_module.autoencode_sensor(sensor_seq, sensor_gt=sensor_id, time_context=time_context)
 
-            # Latent training
             # Latent training
             latent_in = activity_latents + time_context if self.cfg.addtnl_time_context else activity_latents
             _, cross_graph_pred_loss, cross_accuracy_object = self.object_activity_coembedding_module.decode_graph(
@@ -830,6 +827,8 @@ class MultiModalUserTrackingModule(LightningModule):
             pred_used_mask = deepcopy(torch.bitwise_and(changes_pred, obj_mask))
             used_pred_and_gt = deepcopy(torch.bitwise_and(used_mask, pred_used_mask))
             used_pred_and_not_gt = deepcopy(torch.bitwise_and(torch.bitwise_not(used_mask), pred_used_mask))
+
+            stringify_output([dest_pred, dest_gt], mask=used_pred_and_gt, apply_mask=True)
 
             self.results['moved']['correct'][step] += int((torch.bitwise_and(correct, used_pred_and_gt)).sum())
             self.results['moved']['wrong'][step] += int((torch.bitwise_and(wrong, used_pred_and_gt)).sum())
