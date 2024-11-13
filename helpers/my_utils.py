@@ -13,8 +13,6 @@ stdev_threshes = [2.0, 1.0, 0.5, 0.1]
 
 color_red_to_green = ['k', 'r', 'y', 'g', 'g', 'c']
 
-node_classes = torch.load(f'logs/HouseholdA/default_100/baseline/5epoch/raw_results_information_gain.pt')['node_classes']
-
 def make_adict(diction):
     adict_ = {}
     for key, value in diction.items():
@@ -325,6 +323,8 @@ def get_metrics(results, node_classes=None, activity_consistencies=[]):
     return metrics
 
 def stringify_output(moved_list, mask=None, apply_mask=False):
+    node_classes = torch.load(f'logs/HouseholdA/default_100/baseline/5epoch/raw_results_information_gain.pt')['node_classes']
+
     output_types = ["pred", "gt"]
     correct = deepcopy(moved_list[0] == moved_list[1])
     include = True
