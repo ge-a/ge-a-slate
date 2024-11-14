@@ -463,6 +463,7 @@ class MultiModalUserTrackingModule(LightningModule):
                       'latent_similarity': latent_similarity_loss,
                       'latent_pred': latent_predictive_loss,
                       'latent_pred_oversht': latent_predictive_loss_overshoot,
+                      'sensor_autoencoder' : sensor_autoenc_loss, 
                       'sensor_pred' : sensor_pred_loss,
                       'sensor_pred_oversht' : sensor_pred_loss_overshoot,
                       'sensor_graph_cross_pred' : cross_sensor_graph_pred_loss,
@@ -484,6 +485,7 @@ class MultiModalUserTrackingModule(LightningModule):
                         'object_cross_unused': cross_accuracy_object['unused'],
                         'activity_combined': combined_accuracy_activity,
                         'activity_cross': cross_accuracy_activity,
+                        'sensor_autoenc': accuracy_sensor_autoenc,
                         'sensor' : accuracy_sensor,
                         'sensor_graph_cross' : cross_sensor_graph_acc,
                         'sensor_activity_cross' : cross_sensor_activity_acc,
@@ -1272,14 +1274,21 @@ class MultiModalUserTrackingModule(LightningModule):
         if not self.original_model:   
             res += results['loss']['object_autoencoder']
             res += results['loss']['activity_autoencoder']
+            res += results['loss']['sensor_autoencoder']
             if self.cfg.loss_object_cross:
                 res += results['loss']['object_cross_pred']
             if self.cfg.loss_activity_cross:
                 res += results['loss']['activity_cross_pred']
+            if self.cfg.loss_sensor_graph_cross:
+                res += results['loss']['sensor_graph_cross_pred']
+            if self.cfg.loss_sensor_activity_cross:
+                res += results['loss']['sensor_activity_cross_pred']
             if self.cfg.loss_object_combined:
                 res += results['loss']['object_combined_pred']
             if self.cfg.loss_activity_combined:
                 res += results['loss']['activity_combined_pred']
+            if self.cfg.loss_sensor_combined:
+                res += results['loss']['sensor_combined_pred']
             if self.cfg.loss_latent_similarity:
                 res += results['loss']['latent_similarity'] * self.cfg.latent_similarity_weight
             if self.cfg.loss_latent_pred:
@@ -1288,6 +1297,8 @@ class MultiModalUserTrackingModule(LightningModule):
                 res += results['loss']['object_pred'] + results['loss']['object_pred_oversht']
             if self.cfg.loss_activity_pred:
                 res += results['loss']['activity_pred'] + results['loss']['activity_pred_oversht']
+            if self.cfg.loss_sensor_pred:
+                res += results['loss']['sensor_pred'] + results['loss']['sensor_pred_oversht']
         else:
             res += results['loss']['object_pred']
             res += results['loss']['activity_pred']
