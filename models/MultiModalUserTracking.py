@@ -467,6 +467,7 @@ class MultiModalUserTrackingModule(LightningModule):
                       'latent_similarity': latent_similarity_loss,
                       'latent_pred': latent_predictive_loss,
                       'latent_pred_oversht': latent_predictive_loss_overshoot,
+                      'sensor_autoencoder' : sensor_autoenc_loss,
                       'sensor_pred' : sensor_pred_loss,
                       'sensor_pred_oversht' : sensor_pred_loss_overshoot,
                       'sensor_graph_cross_pred' : cross_sensor_graph_pred_loss,
@@ -1276,6 +1277,14 @@ class MultiModalUserTrackingModule(LightningModule):
         if not self.original_model:   
             res += results['loss']['object_autoencoder']
             res += results['loss']['activity_autoencoder']
+            if self.cfg.include_sensor_loss:
+                res += results['loss']['sensor_autoencoder']
+                res += results['loss']['sensor_pred'] + results['loss']['sensor_pred_oversht']
+                res += results['loss']['sensor_graph_cross_pred']
+                res += results['loss']['sensor_activity_cross_pred']
+                res += results['loss']['sensor_combined_pred']
+                res += results['loss']['object_sensor_cross_pred']
+                res += results['loss']['activity_sensor_cross_pred']
             if self.cfg.loss_object_cross:
                 res += results['loss']['object_cross_pred']
             if self.cfg.loss_activity_cross:
