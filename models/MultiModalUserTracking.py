@@ -25,7 +25,7 @@ class MultiModalUserTrackingModule(LightningModule):
         
         super().__init__()
 
-        self.val_count = 0
+        self.test_count = 0
 
         self.original_model = original_model
 
@@ -1250,8 +1250,7 @@ class MultiModalUserTrackingModule(LightningModule):
                 self.log(f'Val {key}', value, batch_size=batch['activity_features'].size(0))
 
         self.reset_validation()
-        self.val_count += 1
-        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps, day=self.val_count)
+        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps)
         
         # Set early stopping metric
         self.log('Val_ES_accuracy',results['accuracies']['object_used'], batch_size=batch['activity_features'].size(0))
@@ -1270,7 +1269,8 @@ class MultiModalUserTrackingModule(LightningModule):
             results = self(batch)
             self.log('Test loss',results['loss'])
             self.log('Test accuracy',results['accuracies'])
-        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps)
+        self.test_count += 1
+        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps, day=self.test_count)
         return 
 
     def write_results(self, output_dir, common_data, suffix=''):
