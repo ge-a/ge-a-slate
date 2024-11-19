@@ -25,6 +25,8 @@ class MultiModalUserTrackingModule(LightningModule):
         
         super().__init__()
 
+        self.val_count = 0
+
         self.original_model = original_model
 
         self.cfg = model_configs
@@ -622,7 +624,7 @@ class MultiModalUserTrackingModule(LightningModule):
         return relocations_probs, query_prob, activity_probs, changes_pred, activity_best_step
 
 
-    def evaluate_prediction(self, batch, num_steps=1):
+    def evaluate_prediction(self, batch, num_steps=1, day=-1):
 
         graph_seq_nodes = batch.get('node_features').float()
         graph_seq_edges = batch.get('edges')
@@ -757,7 +759,8 @@ class MultiModalUserTrackingModule(LightningModule):
             used_pred_and_gt = deepcopy(torch.bitwise_and(used_mask, pred_used_mask))
             used_pred_and_not_gt = deepcopy(torch.bitwise_and(torch.bitwise_not(used_mask), pred_used_mask))
 
-            stringify_output([dest_pred, dest_gt], mask=used_pred_and_gt, apply_mask=True)
+            if day != -1:
+                stringify_output([dest_pred, dest_gt], init_state, day=day, step=step, mask=used_pred_and_gt, apply_mask=True)
 
             self.results['moved']['correct'][step] += int((torch.bitwise_and(correct, used_pred_and_gt)).sum())
             self.results['moved']['wrong'][step] += int((torch.bitwise_and(wrong, used_pred_and_gt)).sum())
@@ -1246,7 +1249,8 @@ class MultiModalUserTrackingModule(LightningModule):
                 self.log(f'Val {key}', value, batch_size=batch['activity_features'].size(0))
 
         self.reset_validation()
-        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps)
+        self.val_count += 1
+        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps, day=self.val_count)
         
         # Set early stopping metric
         self.log('Val_ES_accuracy',results['accuracies']['object_used'], batch_size=batch['activity_features'].size(0))
