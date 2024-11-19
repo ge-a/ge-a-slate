@@ -628,6 +628,7 @@ class MultiModalUserTrackingModule(LightningModule):
 
         graph_seq_nodes = batch.get('node_features').float()
         graph_seq_edges = batch.get('edges')
+        init_state = torch.argmax(graph_seq_edges[0], dim=-1)[0]
         assert not EXTRACAREFUL or torch.allclose(graph_seq_edges.sum(-1), torch.ones_like(graph_seq_edges.sum(-1)), atol=0.1), "Edges are not normalized!"
         graph_dyn_edges = batch.get('dynamic_edges_mask')
         activity_seq = batch.get('activity_features')[:,:-1,:]
