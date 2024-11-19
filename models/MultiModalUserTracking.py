@@ -20,10 +20,13 @@ from helpers.my_utils import color_palette, get_metrics, wrap_str, stringify_out
 random.seed(23435)
 np.random.seed(23435)
 
+
 class MultiModalUserTrackingModule(LightningModule):
     def __init__(self, model_configs, original_model=False):
         
         super().__init__()
+
+        self.test_count = 0
 
         self.original_model = original_model
 
@@ -684,10 +687,11 @@ class MultiModalUserTrackingModule(LightningModule):
         return relocations_probs, query_prob, activity_probs, changes_pred, activity_best_step
 
 
-    def evaluate_prediction(self, batch, num_steps=1):
+    def evaluate_prediction(self, batch, num_steps=1, day=-1):
 
         graph_seq_nodes = batch.get('node_features').float()
         graph_seq_edges = batch.get('edges')
+        init_state = torch.argmax(graph_seq_edges[0], dim=-1)[0]
         assert not EXTRACAREFUL or torch.allclose(graph_seq_edges.sum(-1), torch.ones_like(graph_seq_edges.sum(-1)), atol=0.1), "Edges are not normalized!"
         graph_dyn_edges = batch.get('dynamic_edges_mask')
         activity_seq = batch.get('activity_features')[:,:-1,:]
@@ -823,7 +827,8 @@ class MultiModalUserTrackingModule(LightningModule):
             used_pred_and_gt = deepcopy(torch.bitwise_and(used_mask, pred_used_mask))
             used_pred_and_not_gt = deepcopy(torch.bitwise_and(torch.bitwise_not(used_mask), pred_used_mask))
 
-            stringify_output()
+            if day != -1:
+                stringify_output([dest_pred, dest_gt], init_state, day=day, step=step, mask=used_pred_and_gt, apply_mask=True)
 
             self.results['moved']['correct'][step] += int((torch.bitwise_and(correct, used_pred_and_gt)).sum())
             self.results['moved']['wrong'][step] += int((torch.bitwise_and(wrong, used_pred_and_gt)).sum())
@@ -1281,12 +1286,21 @@ class MultiModalUserTrackingModule(LightningModule):
             res += results['loss']['activity_autoencoder']
             if self.cfg.include_sensor_loss:
                 res += results['loss']['sensor_autoencoder']
-                res += results['loss']['sensor_pred'] + results['loss']['sensor_pred_oversht']
-                res += results['loss']['sensor_graph_cross_pred']
-                res += results['loss']['sensor_activity_cross_pred']
-                res += results['loss']['sensor_combined_pred']
-                res += results['loss']['object_sensor_cross_pred']
-                res += results['loss']['activity_sensor_cross_pred']
+                sens_loss = torch.tensor([0.], requires_grad=True).to('cuda')
+                if self.cfg.loss_sensor_pred:
+                    sens_loss += results['loss']['sensor_pred'] + results['loss']['sensor_pred_oversht']
+                if self.cfg.loss_act_graph_sens_cross:
+                    sens_loss += results['loss']['object_sensor_cross_pred']
+                    sens_loss += results['loss']['activity_sensor_cross_pred']
+                if self.cfg.loss_sensor_combined:
+                    sens_loss += results['loss']['sensor_combined_pred']
+                if self.cfg.sensor_graph_act_cross:
+                    sens_loss += results['loss']['sensor_graph_cross_pred']
+                    sens_loss += results['loss']['sensor_activity_cross_pred']
+
+                scale_factor = self.cfg.sensor_loss_scale_factor if hasattr(self.cfg, 'sensor_loss_scale_factor') else 0.1
+                sens_loss = sens_loss * scale_factor
+                res += sens_loss
             if self.cfg.loss_object_cross:
                 res += results['loss']['object_cross_pred']
             if self.cfg.loss_activity_cross:
@@ -1320,7 +1334,7 @@ class MultiModalUserTrackingModule(LightningModule):
                 self.log(f'Val {key}', value, batch_size=batch['activity_features'].size(0))
 
         self.reset_validation()
-        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps)
+        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps, day=-1)
         
         # Set early stopping metric
         self.log('Val_ES_accuracy',results['accuracies']['object_used'], batch_size=batch['activity_features'].size(0))
@@ -1339,7 +1353,8 @@ class MultiModalUserTrackingModule(LightningModule):
             results = self(batch)
             self.log('Test loss',results['loss'])
             self.log('Test accuracy',results['accuracies'])
-        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps)
+        self.test_count += 1
+        self.evaluate_prediction(batch, num_steps=self.cfg.lookahead_steps, day=self.test_count)
         return 
 
     def write_results(self, output_dir, common_data, suffix=''):

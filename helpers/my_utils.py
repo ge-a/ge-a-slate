@@ -323,28 +323,47 @@ def get_metrics(results, node_classes=None, activity_consistencies=[]):
     return metrics
 
 
-def stringify_output(moved_list, mask=None, apply_mask=False):
+def stringify_output(moved_list, init_state, day, step, mask=None, apply_mask=False):
     node_classes = torch.load(f'logs/HouseholdA/default_100/baseline/5epoch/raw_results_information_gain.pt')['node_classes']
-
-    output_types = ["pred", "gt"]
+    pred_prev_state = init_state
+    gt_prev_state = init_state
     correct = deepcopy(moved_list[0] == moved_list[1])
     include = True
-    for k, moves in enumerate(moved_list):
-        object_container_dict = {}
-        for i in range(moves.shape[1]):
-            cur_state = moves[0, i, :]
-            object_container_dict[i] = {}
-            for j, val in enumerate(cur_state):
-                if apply_mask and mask != None:
-                    include = mask[0, i, j]
-                is_correct = correct[0, i, j].item()
-                object = node_classes[j]
-                container = node_classes[val]
-                if include:
-                    if container in object_container_dict[i]:
-                        object_container_dict[i][container].append([object, is_correct])
-                    else:
-                        object_container_dict[i][container] = [[object, is_correct]]            
 
-        with open(f"stringified/stringified_dest_{output_types[k]}.json", "w") as json_file:
-            json.dump(object_container_dict, json_file)
+    combined_object_container_dict = {}
+
+    for i in range(moved_list[0].shape[1]):
+        combined_object_container_dict[i] = []
+        
+        pred_cur_state = moved_list[0][0, i, :]
+        gt_cur_state = moved_list[1][0, i, :]
+    
+        for j, (pred_val, gt_val) in enumerate(zip(pred_cur_state, gt_cur_state)):
+            if apply_mask and mask is not None:
+                include = mask[0, i, j]
+            if not include:
+                continue
+            pred_prev_val = pred_prev_state[j]
+            gt_prev_val = gt_prev_state[j]
+
+            is_correct = correct[0, i, j].item()
+            object_name = node_classes[j]
+            pred_from = node_classes[pred_prev_val]
+            pred_to = node_classes[pred_val]
+            gt_from = node_classes[gt_prev_val]
+            gt_to = node_classes[gt_val]
+
+            combined_entry = {
+                "object": object_name,
+                "pred_from": pred_from,
+                "pred_to": pred_to,
+                "gt_from": gt_from,
+                "gt_to": gt_to,
+                "correct?": is_correct
+            }
+            combined_object_container_dict[i].append(combined_entry)
+        pred_prev_state = pred_cur_state
+        gt_prev_state = gt_cur_state
+
+    with open(f"stringified/day{day}_step{step}_combined.json", "w") as json_file:
+        json.dump(combined_object_container_dict, json_file, indent=4)
