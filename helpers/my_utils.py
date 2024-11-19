@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from adict import adict
+import json
+from copy import deepcopy
 
 stdev_threshes = [2.0, 1.0, 0.5, 0.1]
 
@@ -319,3 +321,30 @@ def get_metrics(results, node_classes=None, activity_consistencies=[]):
                 metrics['activity_clarified'][qt]['correct_fraction'] = metrics['activity_clarified'][qt]['correct'] / metrics['activity_clarified'][qt]['total']
 
     return metrics
+
+
+def stringify_output(moved_list, mask=None, apply_mask=False):
+    node_classes = torch.load(f'logs/HouseholdA/default_100/baseline/5epoch/raw_results_information_gain.pt')['node_classes']
+
+    output_types = ["pred", "gt"]
+    correct = deepcopy(moved_list[0] == moved_list[1])
+    include = True
+    for k, moves in enumerate(moved_list):
+        object_container_dict = {}
+        for i in range(moves.shape[1]):
+            cur_state = moves[0, i, :]
+            object_container_dict[i] = {}
+            for j, val in enumerate(cur_state):
+                if apply_mask and mask != None:
+                    include = mask[0, i, j]
+                is_correct = correct[0, i, j].item()
+                object = node_classes[j]
+                container = node_classes[val]
+                if include:
+                    if container in object_container_dict[i]:
+                        object_container_dict[i][container].append([object, is_correct])
+                    else:
+                        object_container_dict[i][container] = [[object, is_correct]]            
+
+        with open(f"stringified/stringified_dest_{output_types[k]}.json", "w") as json_file:
+            json.dump(object_container_dict, json_file)

@@ -15,7 +15,7 @@ from torch.nn import functional as F
 from torch.optim import Adam
 from pytorch_lightning.core import LightningModule
 from ObjectActivityCoembedding import ObjectActivityCoembeddingModule, Latent, LatentDeterministic, EXTRACAREFUL
-from helpers.my_utils import color_palette, get_metrics, wrap_str
+from helpers.my_utils import color_palette, get_metrics, wrap_str, stringify_output
 
 random.seed(23435)
 np.random.seed(23435)
@@ -822,6 +822,8 @@ class MultiModalUserTrackingModule(LightningModule):
             pred_used_mask = deepcopy(torch.bitwise_and(changes_pred, obj_mask))
             used_pred_and_gt = deepcopy(torch.bitwise_and(used_mask, pred_used_mask))
             used_pred_and_not_gt = deepcopy(torch.bitwise_and(torch.bitwise_not(used_mask), pred_used_mask))
+
+            stringify_output()
 
             self.results['moved']['correct'][step] += int((torch.bitwise_and(correct, used_pred_and_gt)).sum())
             self.results['moved']['wrong'][step] += int((torch.bitwise_and(wrong, used_pred_and_gt)).sum())
