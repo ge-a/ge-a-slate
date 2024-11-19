@@ -345,5 +345,5 @@ def stringify_output(moved_list, mask=None, apply_mask=False):
                     else:
                         object_container_dict[i][container] = [[object, is_correct]]            
 
-        with open(f"stringified_dest_{output_types[k]}.json", "w") as json_file:
+        with open(f"stringified/stringified_dest_{output_types[k]}.json", "w") as json_file:
             json.dump(object_container_dict, json_file)
