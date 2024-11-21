@@ -1297,10 +1297,10 @@ class MultiModalUserTrackingModule(LightningModule):
                 if self.cfg.sensor_graph_act_cross:
                     sens_loss += results['loss']['sensor_graph_cross_pred']
                     sens_loss += results['loss']['sensor_activity_cross_pred']
-
                 scale_factor = self.cfg.sensor_loss_scale_factor if hasattr(self.cfg, 'sensor_loss_scale_factor') else 0.1
                 sens_loss = sens_loss * scale_factor
-                res += sens_loss
+                if self.cfg.include_other_sensor_loss:
+                    res += sens_loss
             if self.cfg.loss_object_cross:
                 res += results['loss']['object_cross_pred']
             if self.cfg.loss_activity_cross:

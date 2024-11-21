@@ -343,12 +343,12 @@ def stringify_output(moved_list, init_state, day, step, mask=None, apply_mask=Fa
                 include = mask[0, i, j]
             if not include:
                 continue
-            pred_prev_val = pred_prev_state[j]
+            #pred_prev_val = pred_prev_state[j]
             gt_prev_val = gt_prev_state[j]
 
             is_correct = correct[0, i, j].item()
             object_name = node_classes[j]
-            pred_from = node_classes[pred_prev_val]
+            pred_from = node_classes[gt_prev_val]
             pred_to = node_classes[pred_val]
             gt_from = node_classes[gt_prev_val]
             gt_to = node_classes[gt_val]
@@ -362,7 +362,7 @@ def stringify_output(moved_list, init_state, day, step, mask=None, apply_mask=Fa
                 "correct?": is_correct
             }
             combined_object_container_dict[i].append(combined_entry)
-        pred_prev_state = pred_cur_state
+        #pred_prev_state = pred_cur_state
         gt_prev_state = gt_cur_state
 
     with open(f"stringified/day{day}_step{step}_combined.json", "w") as json_file:

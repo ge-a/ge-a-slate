@@ -38,8 +38,9 @@ loss_object_pred: True
 loss_activity_pred: True
 phased_training: False
 
-include_sensor_loss: True
+include_sensor_loss: False
 loss_sensor_pred: True
 loss_act_graph_sens_cross: True
 loss_sensor_combined: True
 sensor_graph_act_cross: True
+include_other_sensor_loss: False
