@@ -1,0 +1,909 @@
+{
+    "tooth_paste": {
+        "num_correct": 47,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 47,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "bathroom_cabinet": 47
+        },
+        "gt_to_ct": {
+            "bathroom_cabinet": 47
+        },
+        "from_ct": {
+            "toothbrush_holder": 30,
+            "bathroom_cabinet": 17
+        }
+    },
+    "remote_control": {
+        "num_correct": 442,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 280,
+            "midday": 97,
+            "night": 65
+        },
+        "pred_to_ct": {
+            "sofa": 149,
+            "tvstand": 293
+        },
+        "gt_to_ct": {
+            "sofa": 149,
+            "tvstand": 293
+        },
+        "from_ct": {
+            "tvstand": 272,
+            "sofa": 170
+        }
+    },
+    "razor": {
+        "num_correct": 15,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 15,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "bathroom_cabinet": 15
+        },
+        "gt_to_ct": {
+            "bathroom_cabinet": 15
+        },
+        "from_ct": {
+            "bathroom_counter": 15
+        }
+    },
+    "shaving_cream": {
+        "num_correct": 15,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 15,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "bathroom_cabinet": 15
+        },
+        "gt_to_ct": {
+            "bathroom_cabinet": 15
+        },
+        "from_ct": {
+            "bathroom_counter": 15
+        }
+    },
+    "bowl": {
+        "num_correct": 212,
+        "num_wrong": 44,
+        "tod_dist": {
+            "morning": 256,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 147,
+            "sink": 79,
+            "cupboard": 30
+        },
+        "gt_to_ct": {
+            "table": 147,
+            "cupboard": 64,
+            "sink": 45
+        },
+        "from_ct": {
+            "cupboard": 65,
+            "table": 149,
+            "sink": 42
+        }
+    },
+    "spoon": {
+        "num_correct": 369,
+        "num_wrong": 40,
+        "tod_dist": {
+            "morning": 238,
+            "midday": 171,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "bowl": 147,
+            "sink": 98,
+            "cupboard": 96,
+            "table": 53,
+            "cookingpot": 15
+        },
+        "gt_to_ct": {
+            "bowl": 144,
+            "sink": 90,
+            "cupboard": 96,
+            "table": 57,
+            "cookingpot": 22
+        },
+        "from_ct": {
+            "cupboard": 106,
+            "bowl": 149,
+            "sink": 61,
+            "table": 70,
+            "cookingpot": 23
+        }
+    },
+    "food_cereal": {
+        "num_correct": 87,
+        "num_wrong": 4,
+        "tod_dist": {
+            "morning": 91,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 64,
+            "cupboard": 23,
+            "sink": 4
+        },
+        "gt_to_ct": {
+            "table": 64,
+            "cupboard": 27
+        },
+        "from_ct": {
+            "table": 72,
+            "cupboard": 19
+        }
+    },
+    "milk": {
+        "num_correct": 163,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 163,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 122,
+            "fridge": 41
+        },
+        "gt_to_ct": {
+            "table": 122,
+            "fridge": 41
+        },
+        "from_ct": {
+            "table": 132,
+            "fridge": 31
+        }
+    },
+    "notebook": {
+        "num_correct": 34,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 34,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "filing_cabinet": 30,
+            "desk": 4
+        },
+        "gt_to_ct": {
+            "filing_cabinet": 30,
+            "desk": 4
+        },
+        "from_ct": {
+            "desk": 22,
+            "filing_cabinet": 12
+        }
+    },
+    "food_bread": {
+        "num_correct": 150,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 150,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "kitchen_counter": 150
+        },
+        "gt_to_ct": {
+            "kitchen_counter": 150
+        },
+        "from_ct": {
+            "kitchen_counter": 150
+        }
+    },
+    "plate": {
+        "num_correct": 419,
+        "num_wrong": 51,
+        "tod_dist": {
+            "morning": 234,
+            "midday": 236,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "kitchen_counter": 206,
+            "table": 104,
+            "cupboard": 96,
+            "sink": 64
+        },
+        "gt_to_ct": {
+            "kitchen_counter": 221,
+            "table": 94,
+            "sink": 54,
+            "cupboard": 101
+        },
+        "from_ct": {
+            "cupboard": 106,
+            "kitchen_counter": 235,
+            "table": 96,
+            "sink": 33
+        }
+    },
+    "knife": {
+        "num_correct": 193,
+        "num_wrong": 14,
+        "tod_dist": {
+            "morning": 207,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "kitchen_counter": 145,
+            "sink": 33,
+            "cupboard": 29
+        },
+        "gt_to_ct": {
+            "kitchen_counter": 147,
+            "sink": 21,
+            "cupboard": 39
+        },
+        "from_ct": {
+            "knifeblock": 30,
+            "kitchen_counter": 147,
+            "sink": 21,
+            "cupboard": 9
+        }
+    },
+    "food_cheese": {
+        "num_correct": 120,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 95,
+            "midday": 25,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "fridge": 65,
+            "kitchen_counter": 53,
+            "cutting_board": 2
+        },
+        "gt_to_ct": {
+            "fridge": 65,
+            "kitchen_counter": 53,
+            "cutting_board": 2
+        },
+        "from_ct": {
+            "kitchen_counter": 67,
+            "fridge": 47,
+            "cutting_board": 6
+        }
+    },
+    "radio": {
+        "num_correct": 104,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 104,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "dining_room": 104
+        },
+        "gt_to_ct": {
+            "dining_room": 104
+        },
+        "from_ct": {
+            "dining_room": 89,
+            "tvstand": 15
+        }
+    },
+    "oil": {
+        "num_correct": 116,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 116,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "kitchen_counter": 116
+        },
+        "gt_to_ct": {
+            "kitchen_counter": 116
+        },
+        "from_ct": {
+            "kitchen_counter": 102,
+            "cupboard": 14
+        }
+    },
+    "cookingpot": {
+        "num_correct": 270,
+        "num_wrong": 6,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 276,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "stove": 103,
+            "table": 61,
+            "sink": 37,
+            "cupboard": 75
+        },
+        "gt_to_ct": {
+            "stove": 107,
+            "table": 57,
+            "sink": 36,
+            "cupboard": 76
+        },
+        "from_ct": {
+            "stove": 121,
+            "table": 57,
+            "cupboard": 82,
+            "sink": 16
+        }
+    },
+    "fryingpan": {
+        "num_correct": 260,
+        "num_wrong": 8,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 268,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "stove": 95,
+            "table": 59,
+            "sink": 39,
+            "cupboard": 75
+        },
+        "gt_to_ct": {
+            "stove": 100,
+            "table": 57,
+            "sink": 36,
+            "cupboard": 75
+        },
+        "from_ct": {
+            "stove": 115,
+            "table": 57,
+            "cupboard": 80,
+            "sink": 16
+        }
+    },
+    "fork": {
+        "num_correct": 90,
+        "num_wrong": 33,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 123,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 81,
+            "sink": 42
+        },
+        "gt_to_ct": {
+            "table": 76,
+            "sink": 47
+        },
+        "from_ct": {
+            "table": 91,
+            "cupboard": 12,
+            "sink": 20
+        }
+    },
+    "food_rice": {
+        "num_correct": 19,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 19,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "cupboard": 15,
+            "kitchen_counter": 4
+        },
+        "gt_to_ct": {
+            "cupboard": 15,
+            "kitchen_counter": 4
+        },
+        "from_ct": {
+            "kitchen_counter": 18,
+            "cupboard": 1
+        }
+    },
+    "food_vegetable": {
+        "num_correct": 7,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 7,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "fridge": 6,
+            "kitchen_counter": 1
+        },
+        "gt_to_ct": {
+            "fridge": 6,
+            "kitchen_counter": 1
+        },
+        "from_ct": {
+            "kitchen_counter": 7
+        }
+    },
+    "book": {
+        "num_correct": 65,
+        "num_wrong": 5,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 58,
+            "night": 12
+        },
+        "pred_to_ct": {
+            "bookshelf": 60,
+            "table": 3,
+            "sofa": 7
+        },
+        "gt_to_ct": {
+            "bookshelf": 60,
+            "sofa": 10
+        },
+        "from_ct": {
+            "sofa": 41,
+            "bookshelf": 20,
+            "chair": 9
+        }
+    },
+    "chessboard": {
+        "num_correct": 196,
+        "num_wrong": 2,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 179,
+            "night": 19
+        },
+        "pred_to_ct": {
+            "table": 76,
+            "bookshelf": 121,
+            "cutting_board": 1
+        },
+        "gt_to_ct": {
+            "table": 77,
+            "bookshelf": 121
+        },
+        "from_ct": {
+            "table": 86,
+            "bookshelf": 112
+        }
+    },
+    "deck_of_cards": {
+        "num_correct": 197,
+        "num_wrong": 1,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 177,
+            "night": 21
+        },
+        "pred_to_ct": {
+            "table": 77,
+            "bookshelf": 120,
+            "cutting_board": 1
+        },
+        "gt_to_ct": {
+            "table": 77,
+            "bookshelf": 121
+        },
+        "from_ct": {
+            "table": 88,
+            "bookshelf": 110
+        }
+    },
+    "coffee": {
+        "num_correct": 51,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 51,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "cupboard": 47,
+            "table": 4
+        },
+        "gt_to_ct": {
+            "cupboard": 47,
+            "table": 4
+        },
+        "from_ct": {
+            "table": 12,
+            "cupboard": 39
+        }
+    },
+    "coffee_cup": {
+        "num_correct": 26,
+        "num_wrong": 11,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 37,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 12,
+            "sink": 7,
+            "cupboard": 18
+        },
+        "gt_to_ct": {
+            "table": 11,
+            "cupboard": 17,
+            "sink": 9
+        },
+        "from_ct": {
+            "table": 13,
+            "cupboard": 10,
+            "sink": 14
+        }
+    },
+    "headset": {
+        "num_correct": 7,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 7,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "filing_cabinet": 6,
+            "desk": 1
+        },
+        "gt_to_ct": {
+            "filing_cabinet": 6,
+            "desk": 1
+        },
+        "from_ct": {
+            "desk": 7
+        }
+    },
+    "food_chicken": {
+        "num_correct": 40,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 40,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "kitchen_counter": 16,
+            "fridge": 24
+        },
+        "gt_to_ct": {
+            "kitchen_counter": 16,
+            "fridge": 24
+        },
+        "from_ct": {
+            "kitchen_counter": 26,
+            "fridge": 14
+        }
+    },
+    "dry_pasta": {
+        "num_correct": 45,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 45,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "cupboard": 24,
+            "kitchen_counter": 21
+        },
+        "gt_to_ct": {
+            "cupboard": 24,
+            "kitchen_counter": 21
+        },
+        "from_ct": {
+            "kitchen_counter": 31,
+            "cupboard": 14
+        }
+    },
+    "food_donut": {
+        "num_correct": 21,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 3,
+            "night": 18
+        },
+        "pred_to_ct": {
+            "trashbag": 21
+        },
+        "gt_to_ct": {
+            "trashbag": 21
+        },
+        "from_ct": {
+            "kitchen_counter": 6,
+            "trashbag": 15
+        }
+    },
+    "pen": {
+        "num_correct": 20,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 20,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "filing_cabinet": 20
+        },
+        "gt_to_ct": {
+            "filing_cabinet": 20
+        },
+        "from_ct": {
+            "filing_cabinet": 20
+        }
+    },
+    "food_oatmeal": {
+        "num_correct": 59,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 59,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 41,
+            "cupboard": 18
+        },
+        "gt_to_ct": {
+            "table": 41,
+            "cupboard": 18
+        },
+        "from_ct": {
+            "table": 47,
+            "cupboard": 12
+        }
+    },
+    "cd": {
+        "num_correct": 51,
+        "num_wrong": 1,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 52,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "cd_player": 21,
+            "table": 31
+        },
+        "gt_to_ct": {
+            "cd_player": 22,
+            "table": 30
+        },
+        "from_ct": {
+            "cd_player": 36,
+            "table": 12,
+            "tvstand": 4
+        }
+    },
+    "cutting_board": {
+        "num_correct": 9,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 9,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 9
+        },
+        "gt_to_ct": {
+            "table": 9
+        },
+        "from_ct": {
+            "table": 9
+        }
+    },
+    "wine_glass": {
+        "num_correct": 10,
+        "num_wrong": 9,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 19,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "table": 2,
+            "cupboard": 8,
+            "sink": 9
+        },
+        "gt_to_ct": {
+            "table": 2,
+            "cupboard": 17
+        },
+        "from_ct": {
+            "table": 5,
+            "cupboard": 14
+        }
+    },
+    "wine": {
+        "num_correct": 19,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 19,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "kitchen_counter": 19
+        },
+        "gt_to_ct": {
+            "kitchen_counter": 19
+        },
+        "from_ct": {
+            "table": 4,
+            "kitchen_counter": 15
+        }
+    },
+    "food_jam": {
+        "num_correct": 28,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 28,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "fridge": 18,
+            "kitchen_counter": 10
+        },
+        "gt_to_ct": {
+            "fridge": 18,
+            "kitchen_counter": 10
+        },
+        "from_ct": {
+            "kitchen_counter": 18,
+            "fridge": 10
+        }
+    },
+    "food_peanut_butter": {
+        "num_correct": 24,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 24,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "kitchen_counter": 15,
+            "cupboard": 9
+        },
+        "gt_to_ct": {
+            "kitchen_counter": 15,
+            "cupboard": 9
+        },
+        "from_ct": {
+            "kitchen_counter": 21,
+            "cupboard": 3
+        }
+    },
+    "tea": {
+        "num_correct": 17,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 17,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "cupboard": 17
+        },
+        "gt_to_ct": {
+            "cupboard": 17
+        },
+        "from_ct": {
+            "table": 4,
+            "cupboard": 13
+        }
+    },
+    "cup": {
+        "num_correct": 18,
+        "num_wrong": 5,
+        "tod_dist": {
+            "morning": 0,
+            "midday": 23,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "cupboard": 16,
+            "sink": 3,
+            "table": 4
+        },
+        "gt_to_ct": {
+            "cupboard": 11,
+            "sink": 8,
+            "table": 4
+        },
+        "from_ct": {
+            "table": 8,
+            "cupboard": 6,
+            "sink": 9
+        }
+    },
+    "mug": {
+        "num_correct": 16,
+        "num_wrong": 5,
+        "tod_dist": {
+            "morning": 21,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "coffe_maker": 3,
+            "table": 8,
+            "sink": 6,
+            "cupboard": 4
+        },
+        "gt_to_ct": {
+            "coffe_maker": 8,
+            "table": 3,
+            "sink": 6,
+            "cupboard": 4
+        },
+        "from_ct": {
+            "coffe_maker": 10,
+            "table": 3,
+            "sink": 5,
+            "cupboard": 3
+        }
+    },
+    "coffee_filter": {
+        "num_correct": 7,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 7,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "sink": 3,
+            "cupboard": 4
+        },
+        "gt_to_ct": {
+            "sink": 3,
+            "cupboard": 4
+        },
+        "from_ct": {
+            "coffe_maker": 3,
+            "cupboard": 4
+        }
+    },
+    "ground_coffee": {
+        "num_correct": 3,
+        "num_wrong": 0,
+        "tod_dist": {
+            "morning": 3,
+            "midday": 0,
+            "night": 0
+        },
+        "pred_to_ct": {
+            "cupboard": 3
+        },
+        "gt_to_ct": {
+            "cupboard": 3
+        },
+        "from_ct": {
+            "kitchen_counter": 3
+        }
+    }
+}

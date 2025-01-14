@@ -1,0 +1,426 @@
+{
+    "0": [
+        {
+            "object": "tooth_paste",
+            "pred_from": "toothbrush_holder",
+            "pred_to": "bathroom_cabinet",
+            "gt_from": "toothbrush_holder",
+            "gt_to": "bathroom_cabinet",
+            "correct?": true
+        }
+    ],
+    "1": [],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": [],
+    "6": [
+        {
+            "object": "remote_control",
+            "pred_from": "sofa",
+            "pred_to": "tvstand",
+            "gt_from": "sofa",
+            "gt_to": "tvstand",
+            "correct?": true
+        }
+    ],
+    "7": [],
+    "8": [],
+    "9": [
+        {
+            "object": "razor",
+            "pred_from": "bathroom_cabinet",
+            "pred_to": "bathroom_cabinet",
+            "gt_from": "bathroom_counter",
+            "gt_to": "bathroom_cabinet",
+            "correct?": true
+        },
+        {
+            "object": "shaving_cream",
+            "pred_from": "bathroom_cabinet",
+            "pred_to": "bathroom_cabinet",
+            "gt_from": "bathroom_counter",
+            "gt_to": "bathroom_cabinet",
+            "correct?": true
+        }
+    ],
+    "10": [],
+    "11": [],
+    "12": [
+        {
+            "object": "milk",
+            "pred_from": "fridge",
+            "pred_to": "table",
+            "gt_from": "fridge",
+            "gt_to": "table",
+            "correct?": true
+        },
+        {
+            "object": "spoon",
+            "pred_from": "cupboard",
+            "pred_to": "bowl",
+            "gt_from": "cupboard",
+            "gt_to": "bowl",
+            "correct?": true
+        }
+    ],
+    "13": [
+        {
+            "object": "milk",
+            "pred_from": "table",
+            "pred_to": "fridge",
+            "gt_from": "table",
+            "gt_to": "fridge",
+            "correct?": true
+        }
+    ],
+    "14": [
+        {
+            "object": "bowl",
+            "pred_from": "table",
+            "pred_to": "sink",
+            "gt_from": "table",
+            "gt_to": "cupboard",
+            "correct?": false
+        },
+        {
+            "object": "spoon",
+            "pred_from": "bowl",
+            "pred_to": "sink",
+            "gt_from": "bowl",
+            "gt_to": "sink",
+            "correct?": true
+        }
+    ],
+    "15": [
+        {
+            "object": "spoon",
+            "pred_from": "sink",
+            "pred_to": "cupboard",
+            "gt_from": "sink",
+            "gt_to": "cupboard",
+            "correct?": true
+        }
+    ],
+    "16": [],
+    "17": [],
+    "18": [],
+    "19": [],
+    "20": [
+        {
+            "object": "notebook",
+            "pred_from": "desk",
+            "pred_to": "filing_cabinet",
+            "gt_from": "desk",
+            "gt_to": "filing_cabinet",
+            "correct?": true
+        }
+    ],
+    "21": [],
+    "22": [],
+    "23": [],
+    "24": [],
+    "25": [],
+    "26": [],
+    "27": [],
+    "28": [],
+    "29": [],
+    "30": [
+        {
+            "object": "food_bread",
+            "pred_from": "kitchen_counter",
+            "pred_to": "kitchen_counter",
+            "gt_from": "kitchen_counter",
+            "gt_to": "kitchen_counter",
+            "correct?": true
+        },
+        {
+            "object": "food_peanut_butter",
+            "pred_from": "cupboard",
+            "pred_to": "kitchen_counter",
+            "gt_from": "cupboard",
+            "gt_to": "kitchen_counter",
+            "correct?": true
+        },
+        {
+            "object": "knife",
+            "pred_from": "knifeblock",
+            "pred_to": "kitchen_counter",
+            "gt_from": "knifeblock",
+            "gt_to": "kitchen_counter",
+            "correct?": true
+        },
+        {
+            "object": "plate",
+            "pred_from": "cupboard",
+            "pred_to": "table",
+            "gt_from": "kitchen_counter",
+            "gt_to": "table",
+            "correct?": true
+        }
+    ],
+    "31": [
+        {
+            "object": "food_jam",
+            "pred_from": "kitchen_counter",
+            "pred_to": "fridge",
+            "gt_from": "kitchen_counter",
+            "gt_to": "fridge",
+            "correct?": true
+        },
+        {
+            "object": "food_peanut_butter",
+            "pred_from": "kitchen_counter",
+            "pred_to": "cupboard",
+            "gt_from": "kitchen_counter",
+            "gt_to": "cupboard",
+            "correct?": true
+        }
+    ],
+    "32": [
+        {
+            "object": "knife",
+            "pred_from": "kitchen_counter",
+            "pred_to": "cupboard",
+            "gt_from": "kitchen_counter",
+            "gt_to": "cupboard",
+            "correct?": true
+        },
+        {
+            "object": "plate",
+            "pred_from": "sink",
+            "pred_to": "cupboard",
+            "gt_from": "table",
+            "gt_to": "cupboard",
+            "correct?": true
+        }
+    ],
+    "33": [],
+    "34": [],
+    "35": [],
+    "36": [],
+    "37": [],
+    "38": [],
+    "39": [],
+    "40": [],
+    "41": [],
+    "42": [],
+    "43": [],
+    "44": [],
+    "45": [],
+    "46": [],
+    "47": [],
+    "48": [],
+    "49": [],
+    "50": [],
+    "51": [],
+    "52": [
+        {
+            "object": "cd",
+            "pred_from": "tvstand",
+            "pred_to": "table",
+            "gt_from": "cd_player",
+            "gt_to": "table",
+            "correct?": true
+        }
+    ],
+    "53": [],
+    "54": [],
+    "55": [],
+    "56": [],
+    "57": [],
+    "58": [],
+    "59": [],
+    "60": [
+        {
+            "object": "book",
+            "pred_from": "bookshelf",
+            "pred_to": "bookshelf",
+            "gt_from": "chair",
+            "gt_to": "bookshelf",
+            "correct?": true
+        }
+    ],
+    "61": [],
+    "62": [
+        {
+            "object": "cookingpot",
+            "pred_from": "stove",
+            "pred_to": "table",
+            "gt_from": "stove",
+            "gt_to": "table",
+            "correct?": true
+        },
+        {
+            "object": "food_rice",
+            "pred_from": "cupboard",
+            "pred_to": "cupboard",
+            "gt_from": "kitchen_counter",
+            "gt_to": "cupboard",
+            "correct?": true
+        },
+        {
+            "object": "food_vegetable",
+            "pred_from": "fridge",
+            "pred_to": "fridge",
+            "gt_from": "kitchen_counter",
+            "gt_to": "fridge",
+            "correct?": true
+        },
+        {
+            "object": "fork",
+            "pred_from": "cupboard",
+            "pred_to": "table",
+            "gt_from": "cupboard",
+            "gt_to": "table",
+            "correct?": true
+        },
+        {
+            "object": "fryingpan",
+            "pred_from": "stove",
+            "pred_to": "table",
+            "gt_from": "stove",
+            "gt_to": "table",
+            "correct?": true
+        },
+        {
+            "object": "plate",
+            "pred_from": "kitchen_counter",
+            "pred_to": "table",
+            "gt_from": "kitchen_counter",
+            "gt_to": "table",
+            "correct?": true
+        },
+        {
+            "object": "spoon",
+            "pred_from": "cupboard",
+            "pred_to": "table",
+            "gt_from": "cupboard",
+            "gt_to": "table",
+            "correct?": true
+        }
+    ],
+    "63": [
+        {
+            "object": "fork",
+            "pred_from": "table",
+            "pred_to": "sink",
+            "gt_from": "table",
+            "gt_to": "sink",
+            "correct?": true
+        },
+        {
+            "object": "plate",
+            "pred_from": "table",
+            "pred_to": "sink",
+            "gt_from": "table",
+            "gt_to": "sink",
+            "correct?": true
+        },
+        {
+            "object": "spoon",
+            "pred_from": "table",
+            "pred_to": "sink",
+            "gt_from": "table",
+            "gt_to": "sink",
+            "correct?": true
+        }
+    ],
+    "64": [],
+    "65": [],
+    "66": [],
+    "67": [],
+    "68": [],
+    "69": [],
+    "70": [],
+    "71": [],
+    "72": [],
+    "73": [],
+    "74": [
+        {
+            "object": "coffee_cup",
+            "pred_from": "cupboard",
+            "pred_to": "table",
+            "gt_from": "cupboard",
+            "gt_to": "table",
+            "correct?": true
+        }
+    ],
+    "75": [],
+    "76": [],
+    "77": [],
+    "78": [],
+    "79": [
+        {
+            "object": "chessboard",
+            "pred_from": "table",
+            "pred_to": "bookshelf",
+            "gt_from": "table",
+            "gt_to": "bookshelf",
+            "correct?": true
+        },
+        {
+            "object": "coffee_cup",
+            "pred_from": "table",
+            "pred_to": "cupboard",
+            "gt_from": "sink",
+            "gt_to": "cupboard",
+            "correct?": true
+        },
+        {
+            "object": "deck_of_cards",
+            "pred_from": "table",
+            "pred_to": "bookshelf",
+            "gt_from": "table",
+            "gt_to": "bookshelf",
+            "correct?": true
+        }
+    ],
+    "80": [],
+    "81": [],
+    "82": [],
+    "83": [],
+    "84": [],
+    "85": [],
+    "86": [],
+    "87": [],
+    "88": [],
+    "89": [],
+    "90": [],
+    "91": [],
+    "92": [],
+    "93": [],
+    "94": [
+        {
+            "object": "remote_control",
+            "pred_from": "tvstand",
+            "pred_to": "tvstand",
+            "gt_from": "sofa",
+            "gt_to": "tvstand",
+            "correct?": true
+        }
+    ],
+    "95": [],
+    "96": [],
+    "97": [],
+    "98": [],
+    "99": [],
+    "100": [],
+    "101": [],
+    "102": [],
+    "103": [],
+    "104": [],
+    "105": [],
+    "106": [],
+    "107": [],
+    "108": [],
+    "109": [],
+    "110": [],
+    "111": [],
+    "112": [],
+    "113": [],
+    "114": [],
+    "115": [],
+    "116": [],
+    "117": []
+}
