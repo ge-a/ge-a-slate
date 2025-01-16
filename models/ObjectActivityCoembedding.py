@@ -516,11 +516,13 @@ class ObjectActivityCoembeddingModule(LightningModule):
         res = 0
         res += results['loss']['object_autoencoder']
         res += results['loss']['activity_autoencoder']
+        res += results['loss']['sensor_autoencoder']
         if self.cfg.train_latent_similarity:  
             res += results['loss']['latent_similarity']
         else:
             res += results['loss']['object_cross_pred']
             res += results['loss']['activity_cross_pred']
+            res += results['loss']['sensor_cross_pred']
         return res
 
     def test_step(self, batch, batch_idx):
