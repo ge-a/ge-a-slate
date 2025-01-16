@@ -1276,6 +1276,7 @@ class MultiModalUserTrackingModule(LightningModule):
         if not self.original_model:   
             res += results['loss']['object_autoencoder']
             res += results['loss']['activity_autoencoder']
+            res += results['loss']['sequence_autoencoder']
             if self.cfg.loss_object_cross:
                 res += results['loss']['object_cross_pred']
             if self.cfg.loss_activity_cross:
@@ -1295,6 +1296,7 @@ class MultiModalUserTrackingModule(LightningModule):
         else:
             res += results['loss']['object_pred']
             res += results['loss']['activity_pred']
+            res += results['loss']['sequence_pred']
         return res
         
     def validation_step(self, batch, batch_idx):
