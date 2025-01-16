@@ -136,3 +136,5 @@ logs/
 slurm*
 
 updated_data
+stringified
+tests
